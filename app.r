@@ -20,15 +20,21 @@ library(plotly)
 library(shinydashboard)# install.packages("shinydashboard")
 library(ndtv)#install.packages("ndtv")
 library(intergraph)#install.packages("intergraph")
-
+library(here)
 
 # FUNCIONES ----------------------------------------------------------------------------
 
 # FUNCIONES: GENERICAS -----------------------------------------------------------------
 # obtener_periodos_disponibles(db_limpia,min(cota_anio), max(cota_anio),cota_seccion)
+
+get_db_connection <- function(db_name){
+    raab_db_conn <- dbConnect(RSQLite::SQLite(),here("data",db_name ))
+    raab_db_conn
+}
+
 obtener_periodos_disponibles <- function(db_name,periodo_min,periodo_max,secciones){
     
-    raab_db_conn <- dbConnect(RSQLite::SQLite(),db_name )
+    raab_db_conn <- get_db_connection(db_name)
     condicion1 <- paste0(" WHERE anio BETWEEN ",periodo_min," AND ",periodo_max)
     condicion <- paste0(condicion1," AND seccion IN ( '",paste(secciones,collapse = "','"),"')")
     consulta1 <- paste0(" SELECT DISTINCT anio FROM articulos ", condicion , " ORDER BY anio  ")
@@ -40,7 +46,7 @@ obtener_periodos_disponibles <- function(db_name,periodo_min,periodo_max,seccion
 
 # FUNCIONES: DB  ---------------------------------------------------------------
 articulos_todos_grafo <- function(db_name,anios,secciones){
-    raab_db_conn <- dbConnect(RSQLite::SQLite(),db_name )
+    raab_db_conn <- get_db_connection(db_name)
     # collab str = 1/n_autores x articulo >  
     condicion1 <- paste0(" WHERE aa.anio IN ( '",paste(anios,collapse = "','"),"')")
     condicion <- paste0(condicion1," AND aa.seccion IN ( '",paste(secciones,collapse = "','"),"')")
