@@ -7,7 +7,7 @@
 
 get_db_connection <- function(db_name){
 
-    data_file <- here("data",db_name )
+    data_file <- here:::here("data",db_name )
 
     # pre logic    
     assertive.files::assert_all_are_existing_files(data_file)
@@ -15,13 +15,13 @@ get_db_connection <- function(db_name){
     # logic
     raab_db_conn <- dbConnect(RSQLite::SQLite(),data_file)
     
-    tmp_tables_check <- dbListTables(conn)
+    tmp_tables_check <- dbListTables(raab_db_conn)
     # not empty
     
     # expected
     stopifnot(length(tmp_tables_check) > 0 ) 
     # got the tables
-    stopifnot(c('autores_articulos', 'articulos') %in% dbListTables(conn) ) 
+    stopifnot(c('autores_articulos', 'articulos') %in% dbListTables(raab_db_conn) ) 
     
     raab_db_conn
 }
