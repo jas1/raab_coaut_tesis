@@ -64,7 +64,7 @@ glimpse(art_full)
 
 current_aut <- "Russo"
 # fuerza_colaboracion_autorut_expected_validator("Carne",art_full,gb_ok)
-fuerza_colaboracion_autorut_expected_validator(current_aut,art_full,gb_ok)
+fuerza_colaboracion_autorut_expected_validator(current_aut,art_full,gb_ok,con_mensaje = TRUE)
 # fuerza_colaboracion_autorut_expected_validator("Hayes",art_full,gb_ok)
 
 # g_aut_art <- igraph:::graph.data.frame(art_full,directed = FALSE)

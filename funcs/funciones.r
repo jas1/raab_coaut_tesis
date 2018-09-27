@@ -38,6 +38,39 @@ obtener_periodos_disponibles <- function(db_name,periodo_min,periodo_max,seccion
     periodos %>% rename(periodo = anio) %>% pull(periodo)
 }
 
+# para agregar un id de nodos que no importa sean autores o articulos.
+agregar_id_nodos_univoco <- function(resultado_db){
+    
+    # pre logic
+    assertive::assert_is_data.frame(resultado_db)
+    
+    # logic
+    
+    edges_autor <- resultado_db %>% 
+        group_by(autor) %>% tally() %>%
+        tibble::rowid_to_column("id") %>% 
+        mutate(aut_id = paste0("a",str_pad(id, 4, pad = "0")) ) %>% # fix: bug:ids
+        select (aut_id,autor)
+    
+    edges_articulo <- resultado_db %>% 
+        group_by(articulo_id) %>% tally() %>% 
+        tibble::rowid_to_column("id")  %>% 
+        mutate(art_id = paste0("b",str_pad(id, 4, pad = "0")) ) %>%  # fix: bug:ids
+        select (art_id,articulo_id)
+    
+    para_edgelist <- resultado_db %>% 
+        left_join(edges_autor,by = c("autor"="autor")) %>% #agrega el campo aut_id
+        left_join(edges_articulo,by = c("articulo_id"="articulo_id")) %>%  #agrega el campo art_id
+        # TODO: 0000 - Nombre> esto era para que se muestre bien el grafo en la visualizacion.
+        # mutate(aut_id_orig = aut_id) %>%
+        # mutate(aut_id = paste0(aut_id," - ", autor )) %>%  # fix: bug:ids
+        select(aut_id,art_id,everything())
+
+    # expected
+
+    para_edgelist
+}
+
 # FUNCIONES: DB  ---------------------------------------------------------------
 articulos_todos_grafo <- function(db_name,anios,secciones){
     raab_db_conn <- get_db_connection(db_name)
@@ -55,7 +88,10 @@ articulos_todos_grafo <- function(db_name,anios,secciones){
                 paste0('\nsecciones: ',secciones)) 
     }
     
-    res_final <- resultado %>% select(autor,articulo_id,autor_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores)
+    res_DB <- resultado %>% select(autor,articulo_id,autor_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores)
+    
+    # agrega las columnsa aut_id y art_id adelante asi lo prepara para armar la edgelist.
+    res_final <- agregar_id_nodos_univoco(res_DB)
     res_final
 }
 
@@ -68,7 +104,7 @@ lista_vertices_autores <- function(data_acotado){
     
     # logic
     vertex_list_autores <- data_acotado %>% 
-        group_by(autor,autor_id) %>% 
+        group_by(aut_id,autor,autor_id) %>% 
         summarise(anios=paste0(anio,collapse = ";"),
                   secciones=paste0(seccion,collapse = ";"),
                   fuerza_colaboracion_total=sum(fuerza_colaboracion),# valor de "collaboration strength" acumulados todos los articulos en colaboracion
@@ -90,7 +126,7 @@ lista_vertices_articulos <- function(data_acotado){
     
     # logic
     vertex_list_articulos <- data_acotado %>% 
-        group_by(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores) %>% 
+        group_by(art_id,articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores) %>% 
         tally() %>% select(-n)
     
     # expected result
@@ -109,7 +145,7 @@ transformar_en_bipartito <- function(g_aut_art,data_acotado){
     assertive::assert_is_data.frame(data_acotado)
 
     # logic
-    igraph:::V(g_aut_art)$type <- igraph:::V(g_aut_art)$name %in% (data_acotado %>% pull(autor) )
+    igraph:::V(g_aut_art)$type <- igraph:::V(g_aut_art)$name %in% (data_acotado %>% pull(aut_id) )
     
     # expected result
     stopifnot(igraph:::is.bipartite(g_aut_art))
@@ -134,9 +170,15 @@ agregar_propiedades_a_bipartito <- function(g_aut_art,data_acotado){
     vertex_list_autores <- lista_vertices_autores(data_acotado)
     
     vertex_list_articulos <- lista_vertices_articulos(data_acotado)
+
+    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$id <- vertex_list_autores$aut_id
+    igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$id <- vertex_list_articulos$art_id
+        
+    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$id_old <- vertex_list_autores$autor_id
+    igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$id_old <- vertex_list_articulos$articulo_id
     
-    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$id <- vertex_list_autores$autor_id
-    igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$id <- vertex_list_articulos$articulo_id
+    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$label <- vertex_list_autores$autor
+    igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$label <- vertex_list_articulos$articulo_id
     
     igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$anio <- vertex_list_autores$anios
     igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$anio <- vertex_list_articulos$anio
@@ -151,7 +193,7 @@ agregar_propiedades_a_bipartito <- function(g_aut_art,data_acotado){
     # length(vertex_list_articulos$anio)
     
     #expected
-    expected_attrs <- c('name','id','anio','fuerza_colaboracion','cant_autores')
+    expected_attrs <- c('name','id','anio','fuerza_colaboracion','cant_autores','id_old','label')
     
     stop_condition <-  all(igraph:::vertex_attr_names(g_aut_art) %in% expected_attrs) 
     if(stop_condition){
@@ -167,7 +209,7 @@ agregar_propiedades_a_bipartito <- function(g_aut_art,data_acotado){
 }
 
 # validacion de FCAutor
-fuerza_colaboracion_autorut_expected_validator <- function(current_autor, data_acotado,grafo_bipartito){
+fuerza_colaboracion_autorut_expected_validator <- function(current_autor, data_acotado,grafo_bipartito,con_mensaje=FALSE){
     total <- art_full %>% filter(str_detect(autor,current_autor)) %>% 
         group_by(autor,articulo_id,anio,fuerza_colaboracion) %>% 
         tally() %>% group_by(autor) %>% 
@@ -175,9 +217,18 @@ fuerza_colaboracion_autorut_expected_validator <- function(current_autor, data_a
     
     FCAut_expected <- total %>% pull(total_fca) %>% as.numeric()
     
-    vertex_current <- igraph:::V(grafo_bipartito)[str_detect(igraph:::V(grafo_bipartito)$name,current_autor) ]
+    vertex_current <- igraph:::V(grafo_bipartito)[str_detect(igraph:::V(grafo_bipartito)$label,current_autor) ]
     FCAut_current <- vertex_current$fuerza_colaboracion
 
+    if (con_mensaje) {
+        mensaje <- paste0("\nautor: ",current_autor,
+                          "\nexpected: ",FCAut_expected,
+                          "\nactual: ",FCAut_current) 
+        message(mensaje)
+    }
+    
+    
+    
     if(FCAut_expected!=FCAut_current){
         warning( "No dan bien los Fuerzca colaboracion para Autor.",
                  paste0("\nautor: ",current_autor,

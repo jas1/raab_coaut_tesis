@@ -39,9 +39,24 @@ server <- function(input, output,session) {
     })
     
     observe({
+        req(input$input_static_network_selected_nodes)
         nodes_selection <- input$input_static_network_selected_nodes
+        
+        print(nodes_selection)
+        
+        filter_vertex <- V(static_network_grafo_reactive())[str_detect(
+            V(static_network_grafo_reactive())$label,nodes_selection)]
+        
+        selected_id <- filter_vertex$id
+        
+        print(paste0("\nid:",filter_vertex$id,
+                     "\nlabel:",filter_vertex$label,
+                     "\nname:",filter_vertex$name,
+                     "\nfuerza_colaboracion:",filter_vertex$fuerza_colaboracion))
+        selected_id <- filter_vertex$label
+
         visNetworkProxy("output_static_network") %>%
-            visSelectNodes(id = nodes_selection)
+            visSelectNodes(id = selected_id)
     })
     observe({
         updateSelectizeInput(session, "input_static_network_selected_nodes",
@@ -58,7 +73,7 @@ server <- function(input, output,session) {
     
     static_network_nodes_select_options <- reactive({
         ids <- V(static_network_grafo_reactive())$id
-        nombres <- V(static_network_grafo_reactive())$name
+        nombres <- V(static_network_grafo_reactive())$label
         
         nodos_df <- data.frame(name=nombres,value=ids,stringsAsFactors = FALSE) %>% as_tibble()
         
@@ -149,7 +164,7 @@ server <- function(input, output,session) {
         
         # cat(vertex_attr_names(tmp_grafo))
         # name id anio fuerza_colaboracion cant_autores size
-        nodos_df <- data.frame(name=V(tmp_grafo)$name,
+        nodos_df <- data.frame(name=V(tmp_grafo)$label,
                                id=V(tmp_grafo)$id,
                                fuerza_colaboracion=V(tmp_grafo)$fuerza_colaboracion,
                                cant_autores=V(tmp_grafo)$cant_autores,stringsAsFactors = FALSE) %>%
@@ -161,19 +176,29 @@ server <- function(input, output,session) {
         ) %>% 
             pull(title)
         
+        label_vertex <- nodos_df %>% pull(name)
+        
         tmp_grafo <-  tmp_grafo %>% 
             set_edge_attr(name="width",value = filter_width_resultado) %>% 
             set_edge_attr(name="color",value = filter_color_resultado) %>% 
             set_edge_attr(name="title",value = title_edges_tooltip) %>% 
-            set_vertex_attr(name="title",value = title_vertex_tooltip)
+            set_vertex_attr(name="title",value = title_vertex_tooltip) %>%
+            set_vertex_attr(name="label",value = label_vertex)
         
         
         #
         tmp_layout <- if_else(input$input_static_layout_select=='','layout_nicely',input$input_static_layout_select)
         
-        visIgraph(tmp_grafo) %>% visNodes(size = 10) %>%
+        visIgraph(tmp_grafo,
+                  idToLabel = FALSE,
+                  randomSeed = input$semilla_seed) %>% 
+            visNodes(size = 10) %>%
             visIgraphLayout(randomSeed = input$semilla_seed,layout=tmp_layout) %>% 
-            visOptions(highlightNearest = list(enabled = T, hover = T)) %>%
+            visOptions( # selectedBy= list(variable = "label"), # esto hace aparecer combos en la red.
+                highlightNearest = list(enabled = TRUE, hover = TRUE)
+                
+                #nodesIdSelection = list(useLabels=TRUE) 
+                ) %>%
             #NULL
             visEvents(click = "function(clickEvent){
                       nodesVar = clickEvent.nodes[0];
@@ -311,7 +336,7 @@ server <- function(input, output,session) {
     subgrafo_coautoria_autor <- reactive({
         g <- static_network_grafo_reactive()
         # glimpse(g)
-        filter_cond <- str_detect(V(g)$name,pattern = input$input_static_network_click_vertex)
+        filter_cond <- str_detect(V(g)$label,pattern = input$input_static_network_click_vertex)
         # glimpse(filter_cond)
         vertice <- V(g)[filter_cond]
         # glimpse(vertice)
@@ -330,7 +355,7 @@ server <- function(input, output,session) {
     output$output_subgrafo_coautoria_autor <- renderVisNetwork({
         g <- static_network_grafo_reactive()
         
-        filter_cond <- str_detect(V(g)$name,pattern = input$input_static_network_click_vertex)
+        filter_cond <- str_detect(V(g)$label,pattern = input$input_static_network_click_vertex)
         
         vertice <- V(g)[filter_cond]    #   
         
@@ -341,7 +366,7 @@ server <- function(input, output,session) {
     
     output$output_info_seleccion_vertex <- renderUI({
         g <- static_network_grafo_reactive()
-        filter_cond <- str_detect(igraph:::V(g)$name,pattern = input$input_static_network_click_vertex)
+        filter_cond <- str_detect(igraph:::V(g)$label,pattern = input$input_static_network_click_vertex)
         
         vertice <- igraph:::V(g)[filter_cond] 
         
@@ -354,7 +379,7 @@ server <- function(input, output,session) {
         
         div(
             br(),
-            p(strong("Autor: "),vertice$name),
+            p(strong("Autor: "),vertice$label),
             p(strong("Periodos participación: "),anio),
             p(strong("Cantidad Artículos Relacionados: "),articulo),
             p(strong("Cantidad Autores Relacionados: "),igraph:::degree(g,vertice)),
@@ -394,7 +419,7 @@ server <- function(input, output,session) {
         
         # div(
         #     br(),
-        #     p(strong("Autor: "),vertice$name),
+        #     p(strong("Autor: "),vertice$label),
         #     p(strong("Periodos participación: "),anio),
         #     p(strong("Cantidad Artículos Relacionados: "),articulo),
         #     p(strong("Cantidad Autores Relacionados: "),degree(g,vertice)),
@@ -726,7 +751,7 @@ server <- function(input, output,session) {
         current_subgraph <- induced_subgraph(tmp_grafo,current_group) 
         
         # obtener base dado un grafo en un periodo particular, filtrado por los autores participantes
-        current_autores <- V(current_subgraph)$name
+        current_autores <- V(current_subgraph)$label
         base_autores_tmp <- static_data_base() %>% filter(autor %in% current_autores)
         
         estructura_grafo_df <- calcular_estructura_grafo(current_subgraph,base_autores_tmp)
