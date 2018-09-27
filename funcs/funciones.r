@@ -6,7 +6,23 @@
 # obtener_periodos_disponibles(db_limpia,min(cota_anio), max(cota_anio),cota_seccion)
 
 get_db_connection <- function(db_name){
-    raab_db_conn <- dbConnect(RSQLite::SQLite(),here("data",db_name ))
+
+    data_file <- here("data",db_name )
+
+    # pre logic    
+    assertive.files::assert_all_are_existing_files(data_file)
+    
+    # logic
+    raab_db_conn <- dbConnect(RSQLite::SQLite(),data_file)
+    
+    tmp_tables_check <- dbListTables(conn)
+    # not empty
+    
+    # expected
+    stopifnot(length(tmp_tables_check) > 0 ) 
+    # got the tables
+    stopifnot(c('autores_articulos', 'articulos') %in% dbListTables(conn) ) 
+    
     raab_db_conn
 }
 
@@ -32,32 +48,92 @@ articulos_todos_grafo <- function(db_name,anios,secciones){
     consulta1 <- paste0( "SELECT aa.*, art.autores_norm as autores FROM autores_articulos aa left join articulos art ON aa.articulo_id=art.articulo_id ",condicion )
     resultado <- dbGetQuery(raab_db_conn, consulta1 ) %>% as_tibble()
     dbDisconnect(raab_db_conn)
+    
+    if (nrow(resultado) == 0) {
+        warning("No hay resultados en la DB para el periodo y secciones",
+                paste0('\nperiodo: ',anios),
+                paste0('\nsecciones: ',secciones)) 
+    }
+    
     res_final <- resultado %>% select(autor,articulo_id,autor_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores)
     res_final
 }
 
 # FUNCIONES: ARMADO GRAFO -----------------------------------------------------------------
-# armado_grafo_bipartito(articulos_todos_grafo(db_limpia,cota_anio,cota_seccion))
-# para armar grafo igraph
-armado_grafo_bipartito <- function(edgelist_para_grafo){
-    # edgelist_para_grafo <- articulos_todos_grafo(db_limpia,cota_anio2,cota_seccion)
-    data_acotado <- edgelist_para_grafo
+
+lista_vertices_autores <- function(data_acotado){
+
+    # pre logic
+    assertive::assert_is_data.frame(data_acotado)
     
+    # logic
     vertex_list_autores <- data_acotado %>% 
         group_by(autor,autor_id) %>% 
         summarise(anios=paste0(anio,collapse = ";"),
                   secciones=paste0(seccion,collapse = ";"),
                   fuerza_colaboracion_total=sum(fuerza_colaboracion),# valor de "collaboration strength" acumulados todos los articulos en colaboracion
-                  cant_autores_coautoria=sum(cant_autores))
+                  cant_autores_coautoria=sum(cant_autores)) %>%
+        arrange(autor)
     
+    # expected
+    if (nrow(vertex_list_autores) == 0 ) {
+        warning("la lista de vertices autores esta vacia")
+    }
+    
+    vertex_list_autores
+}
+
+lista_vertices_articulos <- function(data_acotado){
+    
+    # pre logic
+    assertive::assert_is_data.frame(data_acotado)
+    
+    # logic
     vertex_list_articulos <- data_acotado %>% 
         group_by(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores) %>% 
         tally() %>% select(-n)
     
-    # names(vertex_list_articulos) %>% as_tibble()
+    # expected result
+    if (nrow(vertex_list_articulos) == 0 ) {
+        warning("la lista de vertices articulos esta vacia")
+    }
     
-    g_aut_art <- igraph:::graph.data.frame(data_acotado,directed = FALSE)
+    vertex_list_articulos
+}
+
+# transforma a bipartito segun pa propiedad autor
+transformar_en_bipartito <- function(g_aut_art,data_acotado){
+    
+    # pre logic
+    stopifnot(igraph:::is.igraph(g_aut_art))
+    assertive::assert_is_data.frame(data_acotado)
+
+    # logic
     igraph:::V(g_aut_art)$type <- igraph:::V(g_aut_art)$name %in% (data_acotado %>% pull(autor) )
+    
+    # expected result
+    stopifnot(igraph:::is.bipartite(g_aut_art))
+    
+    g_aut_art
+}
+
+# agrega: 
+# id, tanto articulo como autor, 
+# anio: anio / anios para art y aut
+# fuerza_colaboracion: para art y aut
+# cant_autores: para art y aut
+# 
+agregar_propiedades_a_bipartito <- function(g_aut_art,data_acotado){
+    
+    # pre logic
+    stopifnot(igraph:::is.igraph(g_aut_art))
+    assertive::assert_is_data.frame(data_acotado)
+    
+    # logic
+    
+    vertex_list_autores <- lista_vertices_autores(data_acotado)
+    
+    vertex_list_articulos <- lista_vertices_articulos(data_acotado)
     
     igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$id <- vertex_list_autores$autor_id
     igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$id <- vertex_list_articulos$articulo_id
@@ -74,6 +150,65 @@ armado_grafo_bipartito <- function(edgelist_para_grafo){
     # length(vertex_list_autores$anios)
     # length(vertex_list_articulos$anio)
     
+    #expected
+    expected_attrs <- c('name','id','anio','fuerza_colaboracion','cant_autores')
+    
+    stop_condition <-  all(igraph:::vertex_attr_names(g_aut_art) %in% expected_attrs) 
+    if(stop_condition){
+        warning( "No estan todos los atributos esperados",
+                 paste0("\nexpected:" , paste0(collapse=";",expected_attrs)),
+                 paste0("\nexistentes:" , paste0(collapse=";",igraph:::vertex_attr_names(g_aut_art)))
+           )
+        stopifnot(stop_condition)     
+    }
+    
+    
+    g_aut_art
+}
+
+# validacion de FCAutor
+fuerza_colaboracion_autorut_expected_validator <- function(current_autor, data_acotado,grafo_bipartito){
+    total <- art_full %>% filter(str_detect(autor,current_autor)) %>% 
+        group_by(autor,articulo_id,anio,fuerza_colaboracion) %>% 
+        tally() %>% group_by(autor) %>% 
+        summarise(total_fca=sum(fuerza_colaboracion))
+    
+    FCAut_expected <- total %>% pull(total_fca) %>% as.numeric()
+    
+    vertex_current <- igraph:::V(grafo_bipartito)[str_detect(igraph:::V(grafo_bipartito)$name,current_autor) ]
+    FCAut_current <- vertex_current$fuerza_colaboracion
+
+    if(FCAut_expected!=FCAut_current){
+        warning( "No dan bien los Fuerzca colaboracion para Autor.",
+                 paste0("\nautor: ",current_autor,
+                        "\nexpected: ",FCAut_expected,
+                        "\nactual: ",FCAut_current))
+        
+        stopifnot(FCAut_expected!=FCAut_current)
+    }
+}
+
+
+# armado_grafo_bipartito(articulos_todos_grafo(db_limpia,cota_anio,cota_seccion))
+# para armar grafo igraph
+armado_grafo_bipartito <- function(edgelist_para_grafo){
+    # edgelist_para_grafo <- articulos_todos_grafo(db_limpia,cota_anio2,cota_seccion)
+
+    # pre logic
+    data_acotado <- edgelist_para_grafo
+    assertive::assert_is_data.frame(data_acotado)
+    
+
+    # logic
+    
+    g_aut_art <- igraph:::graph.data.frame(data_acotado,directed = FALSE)
+    
+    g_aut_art <- transformar_en_bipartito(g_aut_art,data_acotado)
+    
+    g_aut_art <- agregar_propiedades_a_bipartito(g_aut_art,data_acotado)
+    
+    # expected
+
     g_aut_art
 }
 
