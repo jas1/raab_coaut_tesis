@@ -43,17 +43,13 @@ server <- function(input, output,session) {
         nodes_selection <- input$input_static_network_selected_nodes
         
         print(nodes_selection)
-        
-        filter_vertex <- V(static_network_grafo_reactive())[str_detect(
-            V(static_network_grafo_reactive())$label,nodes_selection)]
-        
+        grafo <- static_network_grafo_reactive()
+        filter_vertex_cond <- str_detect(V(grafo)$label,nodes_selection)
+        filter_vertex <- igraph:::V(grafo)[filter_vertex_cond]
+        show_details_vertex(filter_vertex)
+
         selected_id <- filter_vertex$id
-        
-        print(paste0("\nid:",filter_vertex$id,
-                     "\nlabel:",filter_vertex$label,
-                     "\nname:",filter_vertex$name,
-                     "\nfuerza_colaboracion:",filter_vertex$fuerza_colaboracion))
-        selected_id <- filter_vertex$label
+        # selected_id <- filter_vertex$label
 
         visNetworkProxy("output_static_network") %>%
             visSelectNodes(id = selected_id)
@@ -311,36 +307,28 @@ server <- function(input, output,session) {
     })
     
     filtered_articulos_anios_autor_reactive <- reactive({
-        req(input$input_static_network_click_vertex)
+        
+        
+        # req(input$input_static_network_click_vertex)
         # input.input_static_network_click_vertex
         # input.input_static_network_click_edge
-        
-        # autor,articulo_id,autor_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores
-        ret <- static_data_base() %>% 
-            filter(str_detect(autores,input$input_static_network_click_vertex)) %>%
-            select(autores,anio,titulo,url,cant_autores,fuerza_colaboracion) %>%
-            mutate(articulo=paste0("<p><a target='_blank' href='",url,"'>",titulo,"</a></p>")) %>% 
-            group_by(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% tally() %>% 
-            select(autores,anio,articulo,cant_autores,fuerza_colaboracion)
-        
-        # autores,articulo_id,autor_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores
-        # glimpse(ret)
-        # descripciones_autores_df %>% 
-        #   filter(autor %in% input$click ) %>%
-        #   filter(periodo %in% input$anio )
-        # %>%
-        #   select(articulos,periodo)
+        g <- static_network_grafo_reactive()
+        db <-  static_data_base()
+        vertice <- get_vertex_from_click_vertex(g,input$input_static_network_click_vertex)
+        autor <-  as.character(vertice$label)
+
+        ret <- obtener_listado_articulos_vertice(db,autor)
+
+        glimpse(ret)
+
         ret
     })
     
     subgrafo_coautoria_autor <- reactive({
         g <- static_network_grafo_reactive()
-        # glimpse(g)
-        filter_cond <- str_detect(V(g)$label,pattern = input$input_static_network_click_vertex)
-        # glimpse(filter_cond)
-        vertice <- V(g)[filter_cond]
-        # glimpse(vertice)
-        
+
+        vertice <- get_vertex_from_click_vertex(g,input$input_static_network_click_vertex)
+
         subgrafo_autor <- make_ego_graph(graph = g, # para el grafo de la red
                                          order=1, # 1 nivel de vecinos
                                          nodes = vertice, # donde el vertice tenga de nombre el selected
@@ -366,9 +354,8 @@ server <- function(input, output,session) {
     
     output$output_info_seleccion_vertex <- renderUI({
         g <- static_network_grafo_reactive()
-        filter_cond <- str_detect(igraph:::V(g)$label,pattern = input$input_static_network_click_vertex)
-        
-        vertice <- igraph:::V(g)[filter_cond] 
+
+        vertice <- get_vertex_from_click_vertex(g,input$input_static_network_click_vertex)
         
         current_select <- filtered_articulos_anios_autor_reactive()
         

@@ -53,6 +53,7 @@ agregar_id_nodos_univoco <- function(resultado_db){
         select (aut_id,autor)
     
     edges_articulo <- resultado_db %>% 
+        arrange(autores) %>% # esto para ordenar por autores los articulos entonces me quedan bien los edges
         group_by(articulo_id) %>% tally() %>% 
         tibble::rowid_to_column("id")  %>% 
         mutate(art_id = paste0("b",str_pad(id, 4, pad = "0")) ) %>%  # fix: bug:ids
@@ -64,7 +65,8 @@ agregar_id_nodos_univoco <- function(resultado_db){
         # TODO: 0000 - Nombre> esto era para que se muestre bien el grafo en la visualizacion.
         # mutate(aut_id_orig = aut_id) %>%
         # mutate(aut_id = paste0(aut_id," - ", autor )) %>%  # fix: bug:ids
-        select(aut_id,art_id,everything())
+        select(aut_id,art_id,everything()) %>%
+        arrange(aut_id)
 
     # expected
 
@@ -109,7 +111,7 @@ lista_vertices_autores <- function(data_acotado){
                   secciones=paste0(seccion,collapse = ";"),
                   fuerza_colaboracion_total=sum(fuerza_colaboracion),# valor de "collaboration strength" acumulados todos los articulos en colaboracion
                   cant_autores_coautoria=sum(cant_autores)) %>%
-        arrange(autor)
+        arrange(aut_id)
     
     # expected
     if (nrow(vertex_list_autores) == 0 ) {
@@ -127,7 +129,8 @@ lista_vertices_articulos <- function(data_acotado){
     # logic
     vertex_list_articulos <- data_acotado %>% 
         group_by(art_id,articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores) %>% 
-        tally() %>% select(-n)
+        tally() %>% select(-n) %>% 
+        arrange(autores) # esto para ordenar por autores los articulos entonces me quedan bien los edges
     
     # expected result
     if (nrow(vertex_list_articulos) == 0 ) {
@@ -153,6 +156,29 @@ transformar_en_bipartito <- function(g_aut_art,data_acotado){
     g_aut_art
 }
 
+
+# este tiene que estar acotado a el tipo articulos
+# art_name_list: vertex art $ NAME
+# vertex_list_articulos_acotado: listado de articulos
+ordenear_lista_articulos_by_vertex_attr <- function(art_name_list,vertex_list_articulos_acotado){
+    orden_original <- data.frame(stringsAsFactors = FALSE, 
+                                 art_id=art_name_list)
+    # print("----")
+    # glimpse(art_name_list)
+    # print("----")
+    # glimpse(orden_original)
+    # print("----")
+    # glimpse(vertex_list_articulos_old)
+    # print("----")
+    resultado <-  orden_original %>% 
+        left_join(vertex_list_articulos_acotado,by=c('art_id'='art_id')) %>%
+        select(art_id,articulo_id,anio,cant_autores,fuerza_colaboracion)
+    
+    
+    resultado
+}
+
+
 # agrega: 
 # id, tanto articulo como autor, 
 # anio: anio / anios para art y aut
@@ -168,8 +194,9 @@ agregar_propiedades_a_bipartito <- function(g_aut_art,data_acotado){
     # logic
     
     vertex_list_autores <- lista_vertices_autores(data_acotado)
-    
-    vertex_list_articulos <- lista_vertices_articulos(data_acotado)
+    vertex_list_articulos_old <- lista_vertices_articulos(data_acotado)
+    vertex_articulos_names <- igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$name
+    vertex_list_articulos <- ordenear_lista_articulos_by_vertex_attr(vertex_articulos_names,vertex_list_articulos_old)
 
     igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$id <- vertex_list_autores$aut_id
     igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$id <- vertex_list_articulos$art_id
@@ -184,9 +211,9 @@ agregar_propiedades_a_bipartito <- function(g_aut_art,data_acotado){
     igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$anio <- vertex_list_articulos$anio
     
     igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$fuerza_colaboracion <- vertex_list_autores$fuerza_colaboracion_total
-    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$cant_autores <- vertex_list_autores$cant_autores_coautoria
-    
     igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$fuerza_colaboracion <- vertex_list_articulos$fuerza_colaboracion
+    
+    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$cant_autores <- vertex_list_autores$cant_autores_coautoria
     igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$cant_autores <- vertex_list_articulos$cant_autores
     
     # length(vertex_list_autores$anios)
@@ -207,38 +234,6 @@ agregar_propiedades_a_bipartito <- function(g_aut_art,data_acotado){
     
     g_aut_art
 }
-
-# validacion de FCAutor
-fuerza_colaboracion_autorut_expected_validator <- function(current_autor, data_acotado,grafo_bipartito,con_mensaje=FALSE){
-    total <- art_full %>% filter(str_detect(autor,current_autor)) %>% 
-        group_by(autor,articulo_id,anio,fuerza_colaboracion) %>% 
-        tally() %>% group_by(autor) %>% 
-        summarise(total_fca=sum(fuerza_colaboracion))
-    
-    FCAut_expected <- total %>% pull(total_fca) %>% as.numeric()
-    
-    vertex_current <- igraph:::V(grafo_bipartito)[str_detect(igraph:::V(grafo_bipartito)$label,current_autor) ]
-    FCAut_current <- vertex_current$fuerza_colaboracion
-
-    if (con_mensaje) {
-        mensaje <- paste0("\nautor: ",current_autor,
-                          "\nexpected: ",FCAut_expected,
-                          "\nactual: ",FCAut_current) 
-        message(mensaje)
-    }
-    
-    
-    
-    if(FCAut_expected!=FCAut_current){
-        warning( "No dan bien los Fuerzca colaboracion para Autor.",
-                 paste0("\nautor: ",current_autor,
-                        "\nexpected: ",FCAut_expected,
-                        "\nactual: ",FCAut_current))
-        
-        stopifnot(FCAut_expected!=FCAut_current)
-    }
-}
-
 
 # armado_grafo_bipartito(articulos_todos_grafo(db_limpia,cota_anio,cota_seccion))
 # para armar grafo igraph
@@ -371,7 +366,43 @@ fuerza_colaboracion_relacion <- function(edge_analizar_ends,edgelist_para_grafo)
 }
 
 # FUNCIONES: ART ASOC -----------------------------------------------------------------
+
+get_vertex_from_click_vertex <- function(grafo,input_click){
+    
+    # print("---------------------")
+    # glimpse(input_click)
+    # print("---------------------")
+    filter_cond <- str_detect(igraph:::V(grafo)$id,pattern = input_click)
+    vertice <- igraph:::V(grafo)[filter_cond]
+    
+    print("--------SHOW click vertex-----------")
+    show_details_vertex(vertice)
+    print("---------------------")
+    
+    vertice
+}
+
+# dada la DB y un nombre de autor, devolver el lsitado
+obtener_listado_articulos_vertice <- function(db,autor_nombre){
+    ret <- db %>% 
+        filter(str_detect(autores,autor_nombre)) %>%
+        select(autores,anio,titulo,url,cant_autores,fuerza_colaboracion) %>%
+        mutate(articulo=paste0("<p><a target='_blank' href='",url,"'>",titulo,"</a></p>")) %>% 
+        group_by(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% tally() %>% 
+        select(autores,anio,articulo,cant_autores,fuerza_colaboracion)
+    
+    ret
+}
+
+
 generar_visualizacion_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
+
+    if(!igraph:::is_igraph(g)){
+        warning("el parametro G debe ser un grafo !")
+        stopifnot(igraph:::is_igraph(g))
+    }
+
+    
     
     subgrafo_autor <- igraph:::make_ego_graph(graph = g, # para el grafo de la red
                                               order=1, # 1 nivel de vecinos
@@ -685,3 +716,70 @@ grafo_para_periodo_x <- function(periodos,cota_seccion,db_limpia,static_edge_wid
     g_coaut
 }
 
+
+
+# FUNCIONES: debugging ---------------------------------------------------------------
+
+# validacion de FCAutor
+fuerza_colaboracion_autorut_expected_validator <- function(current_autor, data_acotado,grafo_bipartito,con_mensaje=FALSE){
+    total <- art_full %>% filter(str_detect(autor,current_autor)) %>% 
+        group_by(autor,articulo_id,anio,fuerza_colaboracion) %>% 
+        tally() %>% group_by(autor) %>% 
+        summarise(total_fca=sum(fuerza_colaboracion))
+    
+    FCAut_expected <- total %>% pull(total_fca) %>% as.numeric()
+    
+    vertex_current <- igraph:::V(grafo_bipartito)[str_detect(igraph:::V(grafo_bipartito)$label,current_autor) ]
+    FCAut_current <- vertex_current$fuerza_colaboracion
+    
+    if (con_mensaje) {
+        mensaje <- paste0("\nautor: ",current_autor,
+                          "\nexpected: ",FCAut_expected,
+                          "\nactual: ",FCAut_current) 
+        message(mensaje)
+    }
+    
+    
+    
+    if(FCAut_expected!=FCAut_current){
+        warning( "No dan bien los Fuerzca colaboracion para Autor.",
+                 paste0("\nautor: ",current_autor,
+                        "\nexpected: ",FCAut_expected,
+                        "\nactual: ",FCAut_current))
+        
+        stopifnot(FCAut_expected!=FCAut_current)
+    }
+}
+
+# VER DETALLE VERTEX
+show_details_vertex <- function(filter_vertex){
+    
+    igraph:::vertex
+    
+
+    cat(paste0("\nid:",filter_vertex$id,
+               "\nname:",filter_vertex$name,
+               "\nlabel:",filter_vertex$label,
+               "\nfuerza_colaboracion:",filter_vertex$fuerza_colaboracion))     
+    
+}
+
+
+show_bipart_vertex_id_diff <- function(grafo,data_acotado){
+    vertex_list_autores <- lista_vertices_autores(data_acotado)
+    tmp_df <- data.frame(id=igraph:::V(grafo)$id,
+                         name=igraph:::V(grafo)$name,
+                         label=igraph:::V(grafo)$label,
+                         fuerza_colaboracion=igraph:::V(grafo)$fuerza_colaboracion,
+                         stringsAsFactors = FALSE)
+
+    # id se agrega a mano ,
+    # name se lo otorga el grafo.
+    
+    #aut_id,autor,autor_id,anios,secciones,fuerza_colaboracion_total,cant_autores_coautoria
+    #arrange(autor)
+
+    tmp_df %>% left_join(vertex_list_autores, by=c('label'='autor')) %>%
+        filter(id != name) %>% select(id,name,label,fuerza_colaboracion)
+    
+}
