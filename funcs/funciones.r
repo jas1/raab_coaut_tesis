@@ -375,9 +375,9 @@ get_vertex_from_click_vertex <- function(grafo,input_click){
     filter_cond <- str_detect(igraph:::V(grafo)$id,pattern = input_click)
     vertice <- igraph:::V(grafo)[filter_cond]
     
-    print("--------SHOW click vertex-----------")
-    show_details_vertex(vertice)
-    print("---------------------")
+    # print("--------SHOW click vertex-----------")
+    # show_details_vertex(vertice)
+    # print("---------------------")
     
     vertice
 }
@@ -395,20 +395,21 @@ obtener_listado_articulos_vertice <- function(db,autor_nombre){
 }
 
 
-generar_visualizacion_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
-
+generar_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
     if(!igraph:::is_igraph(g)){
         warning("el parametro G debe ser un grafo !")
         stopifnot(igraph:::is_igraph(g))
     }
-
     
     
+    glimpse(vertice)
+    glimpse(g)
     subgrafo_autor <- igraph:::make_ego_graph(graph = g, # para el grafo de la red
                                               order=1, # 1 nivel de vecinos
                                               nodes = vertice, # donde el vertice tenga de nombre el selected
                                               mode = "all" )
     
+    glimpse(subgrafo_autor)
     igraph:::edge_attr_names(subgrafo_autor[[1]])
     
     
@@ -422,14 +423,76 @@ generar_visualizacion_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
     sg2 <- sg2 %>% 
         igraph:::set_edge_attr(name="title",value = tmp2)
     
+    sg2
+}
+
+generar_visualizacion_subgrafo_vecinos_from_subgrafo <- function(subgrafo,random_seed=12345){
     
-    resultado_visnet <-  visNetwork:::visIgraph(sg2) %>% 
+    if(!igraph:::is_igraph(subgrafo)){
+        warning("el parametro G debe ser un grafo !")
+        stopifnot(igraph:::is_igraph(subgrafo))
+    }
+    
+    tmp_grafo <- subgrafo
+    
+    filter_edge_resultado <- data.frame(autores=E(tmp_grafo)$autores,
+                                        width=E(tmp_grafo)$width,
+                                        color=E(tmp_grafo)$color,
+                                        weight=E(tmp_grafo)$weight,
+                                        fuerza_colaboracion=E(tmp_grafo)$fuerza_colaboracion,
+                                        stringsAsFactors = FALSE)
+    
+    title_edges_tooltip <- filter_edge_resultado %>% 
+        mutate(title=paste0( "Autores: ",autores,"<br/>",
+                             "Fuerza Colaboración: ",fuerza_colaboracion,"<br/>",
+                             "Cantidad Coautorias: ",weight)) %>% 
+        pull(title)
+    
+    nodos_df <- data.frame(name=V(tmp_grafo)$label,
+                           id=V(tmp_grafo)$id,
+                           fuerza_colaboracion=V(tmp_grafo)$fuerza_colaboracion,
+                           cant_autores=V(tmp_grafo)$cant_autores,stringsAsFactors = FALSE) %>%
+        as_tibble() 
+    # nodos_df %>% glimpse()
+    
+    title_vertex_tooltip <- nodos_df %>% mutate(title=paste0("Autor: ",name,"<br/>",
+                                                             "Fuerza Colaboración: ",fuerza_colaboracion)
+    ) %>% 
+        pull(title)
+    
+    label_vertex <- nodos_df %>% pull(name)
+    
+    tmp_grafo <-  tmp_grafo %>% 
+        # set_edge_attr(name="width",value = filter_width_resultado) %>% 
+        # set_edge_attr(name="color",value = filter_color_resultado) %>% 
+        set_edge_attr(name="title",value = title_edges_tooltip) %>% 
+        set_vertex_attr(name="title",value = title_vertex_tooltip) %>%
+        set_vertex_attr(name="label",value = label_vertex)
+    
+    
+    resultado_visnet <-  visNetwork:::visIgraph(tmp_grafo,
+                                                idToLabel = FALSE,
+                                                randomSeed = random_seed ) %>% 
         visNetwork:::visNodes(size = 10) %>%
         visNetwork:::visIgraphLayout(randomSeed = random_seed,
                                      layout="layout_in_circle"
         ) %>%
         visNetwork:::visOptions(highlightNearest = list(enabled = TRUE, hover = TRUE),
                                 nodesIdSelection =FALSE)
+    resultado_visnet
+}
+    
+
+generar_visualizacion_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
+
+    if(!igraph:::is_igraph(g)){
+        warning("el parametro G debe ser un grafo !")
+        stopifnot(igraph:::is_igraph(g))
+    }
+    
+    sg2 <- generar_subgrafo_vecinos (g,vertice,random_seed)
+    
+    resultado_visnet <- generar_visualizacion_subgrafo_vecinos_from_subgrafo(sg2,random_seed)
     resultado_visnet
     
 }
@@ -760,7 +823,7 @@ show_details_vertex <- function(filter_vertex){
     cat(paste0("\nid:",filter_vertex$id,
                "\nname:",filter_vertex$name,
                "\nlabel:",filter_vertex$label,
-               "\nfuerza_colaboracion:",filter_vertex$fuerza_colaboracion))     
+               "\nfuerza_colaboracion:",filter_vertex$fuerza_colaboracion,"\n"))     
     
 }
 

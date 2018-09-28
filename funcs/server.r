@@ -185,18 +185,19 @@ server <- function(input, output,session) {
         #
         tmp_layout <- if_else(input$input_static_layout_select=='','layout_nicely',input$input_static_layout_select)
         
-        visIgraph(tmp_grafo,
+        visNetwork:::visIgraph(tmp_grafo,
                   idToLabel = FALSE,
                   randomSeed = input$semilla_seed) %>% 
-            visNodes(size = 10) %>%
-            visIgraphLayout(randomSeed = input$semilla_seed,layout=tmp_layout) %>% 
-            visOptions( # selectedBy= list(variable = "label"), # esto hace aparecer combos en la red.
+            visNetwork:::visNodes(size = 10) %>%
+            visNetwork:::visIgraphLayout(randomSeed = input$semilla_seed,
+                                         layout=tmp_layout) %>% 
+            visNetwork:::visOptions( # selectedBy= list(variable = "label"), # esto hace aparecer combos en la red.
                 highlightNearest = list(enabled = TRUE, hover = TRUE)
                 
                 #nodesIdSelection = list(useLabels=TRUE) 
                 ) %>%
             #NULL
-            visEvents(click = "function(clickEvent){
+            visNetwork:::visEvents(click = "function(clickEvent){
                       nodesVar = clickEvent.nodes[0];
                       edgesVar = clickEvent.edges[0];
                       if (nodesVar == null & edgesVar == null){
@@ -343,9 +344,7 @@ server <- function(input, output,session) {
     output$output_subgrafo_coautoria_autor <- renderVisNetwork({
         g <- static_network_grafo_reactive()
         
-        filter_cond <- str_detect(V(g)$label,pattern = input$input_static_network_click_vertex)
-        
-        vertice <- V(g)[filter_cond]    #   
+        vertice <- get_vertex_from_click_vertex(g,input$input_static_network_click_vertex)
         
         ret <- generar_visualizacion_subgrafo_vecinos(g,vertice,input$semilla_seed)
         

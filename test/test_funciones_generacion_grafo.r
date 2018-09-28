@@ -174,7 +174,7 @@ test_that(
         cota_seccion <- c("Trabajos Originales")
         db_limpia <- "db_raab_grafos.sqlite"
         cota_anio <-  c(1996:2016)
-        data_acotado <- articulos_todos_grafo(db_limpia,anios = cota_anio,secciones = cota_seccion)
+        art_full <- articulos_todos_grafo(db_limpia,anios = cota_anio,secciones = cota_seccion)
         gb_ok <- armado_grafo_bipartito(art_full)
         
         g_aut <- extraccion_grafo_coautoria(gb_ok,art_full,width_multiplier = 3)
@@ -183,12 +183,47 @@ test_that(
         vertice_id_expected <- "a0185"
         vertice_name_expected <- "a0185"
         
+        glimpse(art_full)
+        art_full %>% filter(aut_id==vertice_id_expected)
+        art_full %>% filter(autor==vertice_label_expected)
+        
         # execute 
         vertice <- get_vertex_from_click_vertex(g_aut,vertice_id_expected)
         
         expect_equal(vertice$label, vertice_label_expected)
         expect_equal(vertice$id, vertice_id_expected)
         expect_equal(vertice$name, vertice_name_expected)
+    }
+)
+
+test_that(
+    "art.asoc: subgrafo para autor",
+    {
+        source(here:::here("funcs","funciones.r"),encoding = "UTF-8") # asi toma la ultima version
+        
+        # setup        
+        cota_seccion <- c("Trabajos Originales")
+        db_limpia <- "db_raab_grafos.sqlite"
+        cota_anio <-  c(1996:2016)
+        art_full <- articulos_todos_grafo(db_limpia,anios = cota_anio,secciones = cota_seccion)
+        gb_ok <- armado_grafo_bipartito(art_full)
+        
+        g_aut <- extraccion_grafo_coautoria(gb_ok,art_full,width_multiplier = 3)
+        
+        vertice_id_expected <- "a0183"
+        
+        vertice <- get_vertex_from_click_vertex(g_aut,vertice_id_expected)
+        
+        subgrafo <- generar_subgrafo_vecinos(g_aut,vertice)
+        
+        amount_vertex <- length(igraph:::V(subgrafo)$name)
+        
+        expected_amount <- 7
+        
+        expect_equal(amount_vertex, expected_amount)
+        
+        generar_visualizacion_subgrafo_vecinos_from_subgrafo(subgrafo)
+        
     }
 )
 
