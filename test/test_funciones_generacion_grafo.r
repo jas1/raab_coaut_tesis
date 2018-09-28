@@ -125,6 +125,33 @@ test_that(
 )
 
 
+test_that(
+    "grafo: generacion aristas en coautorias ok ",
+    {
+        source(here:::here("funcs","funciones.r"),encoding = "UTF-8") # asi toma la ultima version
+        
+        # setup        
+        cota_seccion <- c("Trabajos Originales")
+        db_limpia <- "db_raab_grafos.sqlite"
+        cota_anio <-  c(1996:2016)
+        art_full <- articulos_todos_grafo(db_limpia,anios = cota_anio,secciones = cota_seccion)
+        gb_ok <- armado_grafo_bipartito(art_full)
+        
+        g_aut <- extraccion_grafo_coautoria(gb_ok,art_full,width_multiplier = 3)
+        
+        # igraph:::E(g_aut)
+        # 
+        # igraph:::edge_attr_names(g_aut)
+        # 
+        # head(igraph:::E(g_aut)$id)
+        # head(igraph:::E(g_aut)$autores)
+            
+        
+            
+        g_aut
+        
+    }
+)
 
 
 

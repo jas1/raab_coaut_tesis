@@ -264,7 +264,8 @@ armado_grafo_bipartito <- function(edgelist_para_grafo){
 # tipo 1: sin multiplicador, tipo 2 * valor multiplicador, tipo 3 * valor multiplicador.
 # ej: width_multiplier= 2 => 2,4,6; width_multiplier= 3 => 3,6,9
 extraccion_grafo_coautoria <- function(grafo_bipartito,edgelist_para_grafo,width_multiplier = 2,color_brew = 'Dark2'){
-    
+    # grafo_bipartito <- gb_ok
+    # edgelist_para_grafo <- art_full 
     g_projections <- igraph:::bipartite_projection(grafo_bipartito,multiplicity = TRUE)
     
     g_aut <- g_projections$proj2
@@ -273,16 +274,25 @@ extraccion_grafo_coautoria <- function(grafo_bipartito,edgelist_para_grafo,width
     # measure of collaboration strength illustrated in Fig. 5. Newman 2004 ; entonces el tamaño del nodo esta con que tan colaborativo fue
     igraph:::V(g_aut)$size <- 10 + (igraph:::V(g_aut)$fuerza_colaboracion*10) # *10 para que aumente el tamaño , dejando de ser decimal
     
-    # esto esta para ponerle los colores a los edges segun lo calculado   
-    
-    color_bins_cant <- 3
-    bins_cant <- if_else(color_bins_cant < 3, 3 , color_bins_cant)
-    color_palette <- brewer.pal(bins_cant,name=color_brew)
+
     
     elist <- igraph:::as_edgelist(g_aut)
+    
+    # glimpse(elist)
+    
+    lista_autores <- lista_vertices_autores(edgelist_para_grafo) %>% select(aut_id,autor)
+    
     elist_df <- data.frame(elist,stringsAsFactors = FALSE) %>% as_tibble() %>% 
         rename(autor1=X1,autor2=X2) %>% 
-        mutate(id=paste0(autor1,"--",autor2))
+        mutate(id=paste0(autor1,"--",autor2)) %>% 
+        left_join(lista_autores,by=c('autor1'='aut_id')) %>% 
+        rename(autor1_label=autor) %>% 
+        left_join(lista_autores,by=c('autor2'='aut_id')) %>% 
+        rename(autor2_label=autor) %>% 
+        mutate(autores=paste0(autor1_label,' - ',autor2_label))
+    
+    # glimpse(elist_df)
+    
     # glimpse(elist)
     # glimpse(data.frame(elist))
     
@@ -291,13 +301,21 @@ extraccion_grafo_coautoria <- function(grafo_bipartito,edgelist_para_grafo,width
     autores_output <- vector(mode='character',length=nrow(elist))
     for (idx in seq_along(1:nrow(elist))) {
         fuerza_colaboracion_output[[idx]] <- (fuerza_colaboracion_relacion(elist[idx,],edgelist_para_grafo))
-        autores_output[[idx]] <- paste0(elist[idx,1],' - ',elist[idx,2])
+        # autores_output[[idx]] <- paste0(elist[idx,1],' - ',elist[idx,2])
     }
     
     g_aut <- g_aut %>% 
         igraph:::set_edge_attr(igraph:::E(g_aut),name = "id",elist_df %>% pull(id)) %>% 
         igraph:::set_edge_attr(igraph:::E(g_aut),name = "fuerza_colaboracion",fuerza_colaboracion_output) %>% 
-        igraph:::set_edge_attr(igraph:::E(g_aut),name = "autores",autores_output)
+        igraph:::set_edge_attr(igraph:::E(g_aut),name = "autores",elist_df %>% pull(autores))
+        # igraph:::set_edge_attr(igraph:::E(g_aut),name = "autores",autores_output)
+    
+    
+    # esto esta para ponerle los colores a los edges segun lo calculado   
+    
+    color_bins_cant <- 3
+    bins_cant <- if_else(color_bins_cant < 3, 3 , color_bins_cant)
+    color_palette <- brewer.pal(bins_cant,name=color_brew)
     
     #criterio_visualizacion <- E(g_aut)$weight # viejo, por peso, que el peso = cant articulos relacion
     criterio_visualizacion <- igraph:::E(g_aut)$fuerza_colaboracion
