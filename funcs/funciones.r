@@ -422,19 +422,31 @@ generar_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
     
     glimpse(vertice)
     glimpse(g)
-    subgrafo_autor <- igraph:::make_ego_graph(graph = g, # para el grafo de la red
+    subgrafo_autor_ego <- igraph:::make_ego_graph(graph = g, # para el grafo de la red
                                               order=1, # 1 nivel de vecinos
                                               nodes = vertice, # donde el vertice tenga de nombre el selected
                                               mode = "all" )
     
-    glimpse(subgrafo_autor)
-    igraph:::edge_attr_names(subgrafo_autor[[1]])
+    # glimpse(subgrafo_autor)
+    # igraph:::edge_attr_names(subgrafo_autor[[1]])
+    
+    # g2 <- induced_subgraph(g, 1:7)
+    
+    #https://stackoverflow.com/questions/44712041/subset-igraph-object-to-just-2nd-order-ego-graph-of-certain-vertices
+    # ego_list <- make_ego_graph(graph, order=2, nodes=V(graph)$condition=="something")
+    
+    subgrafo_autor <- NULL
+    for (i in seq_along(subgrafo_autor_ego)){
+        x <- subgrafo_autor_ego[[i]]
+        subgrafo_autor <- graph.union(subgrafo_autor, x)
+    }
     
     
-    sg2 <- subgrafo_autor[[1]] %>% 
-        igraph:::set_edge_attr(name="width",value = igraph:::E(subgrafo_autor[[1]])$weight) %>%
-        igraph:::set_edge_attr(name="color",value = colores_edges_en_n_bins(igraph:::E(subgrafo_autor[[1]])$weight)) %>% 
-        igraph:::set_vertex_attr(name = "title",value = igraph:::V(subgrafo_autor[[1]])$name)
+    
+    sg2 <- subgrafo_autor %>% 
+        igraph:::set_edge_attr(name="width",value = igraph:::E(subgrafo_autor)$weight) %>%
+        igraph:::set_edge_attr(name="color",value = colores_edges_en_n_bins(igraph:::E(subgrafo_autor)$weight)) %>% 
+        igraph:::set_vertex_attr(name = "title",value = igraph:::V(subgrafo_autor)$name)
     tmp2 <- as_data_frame(sg2) %>% as_tibble() %>% mutate(nombre = paste0(from," - ",to,'<br />',"fuerza colaboración:",fuerza_colaboracion)) %>% pull(nombre)
     
     
