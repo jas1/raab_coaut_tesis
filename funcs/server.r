@@ -42,11 +42,11 @@ server <- function(input, output,session) {
         req(input$input_static_network_selected_nodes)
         nodes_selection <- input$input_static_network_selected_nodes
         
-        print(nodes_selection)
+        # print(nodes_selection)
         grafo <- static_network_grafo_reactive()
         filter_vertex_cond <- str_detect(V(grafo)$label,nodes_selection)
         filter_vertex <- igraph:::V(grafo)[filter_vertex_cond]
-        show_details_vertex(filter_vertex)
+        # show_details_vertex(filter_vertex)
 
         selected_id <- filter_vertex$id
         # selected_id <- filter_vertex$label
@@ -273,6 +273,7 @@ server <- function(input, output,session) {
     
     
     # estatico 2: ARTICULOS -----------------------------------------------------------------------------------------------
+    # WISHLIST MATRIZ: ggplot(melt(m), aes(Var1,Var2, fill=value)) + geom_raster()
     # mostrar resumen autor
     # mostrar resumen relacion
     # mostrar articulos asociados autor
@@ -320,8 +321,6 @@ server <- function(input, output,session) {
 
         ret <- obtener_listado_articulos_vertice(db,autor)
 
-        glimpse(ret)
-
         ret
     })
     
@@ -330,25 +329,28 @@ server <- function(input, output,session) {
 
         vertice <- get_vertex_from_click_vertex(g,input$input_static_network_click_vertex)
 
-        subgrafo_autor <- make_ego_graph(graph = g, # para el grafo de la red
-                                         order=1, # 1 nivel de vecinos
-                                         nodes = vertice, # donde el vertice tenga de nombre el selected
-                                         mode = "all" )
-        
-        # glimpse(subgrafo_autor)
-        
+        subgrafo_autor <- generar_subgrafo_vecinos (g,vertice,input$semilla_seed)
+
         subgrafo_autor
     })
     
+    
     # output output_subgrafo_coautoria_autor: render de la visualizacion acotado a autor seleccionado
     output$output_subgrafo_coautoria_autor <- renderVisNetwork({
-        g <- static_network_grafo_reactive()
-        
-        vertice <- get_vertex_from_click_vertex(g,input$input_static_network_click_vertex)
-        
-        ret <- generar_visualizacion_subgrafo_vecinos(g,vertice,input$semilla_seed)
+
+        ret <- generar_visualizacion_subgrafo_vecinos_from_subgrafo(subgrafo_coautoria_autor(),input$semilla_seed)
         
         ret
+    })
+    
+    
+    output$output_heatmap_coautoria_autor <- renderPlotly({ 
+        
+        g <- subgrafo_coautoria_autor()
+        
+        plot_out <- armar_heatmap_ggplot_from_grafo(g)
+        
+        ggplotly(plot_out) 
     })
     
     output$output_info_seleccion_vertex <- renderUI({

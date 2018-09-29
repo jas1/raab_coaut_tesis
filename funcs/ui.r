@@ -158,7 +158,13 @@ body <- dashboardBody(
                                                                                    ), # fin col 6 parte 1
                                                                                    column(6, 
                                                                                           conditionalPanel('input.input_static_network_click_vertex != null && input.input_static_network_click_edge == ""',
-                                                                                                           visNetworkOutput("output_subgrafo_coautoria_autor")
+                                                                                                           tabsetPanel(type = "tabs",
+                                                                                                                       id="coaut_tabs",
+                                                                                                                       tabPanel("Subred de coautoría",
+                                                                                                                                visNetworkOutput("output_subgrafo_coautoria_autor")),
+                                                                                                                       tabPanel("Heatmap de coautoría",
+                                                                                                                                plotlyOutput('output_heatmap_coautoria_autor'))
+                                                                                                                       )
                                                                                           ), # fin condicional vertex
                                                                                           conditionalPanel('input.input_static_network_click_vertex == null && input.input_static_network_click_edge != null',
                                                                                                            br()

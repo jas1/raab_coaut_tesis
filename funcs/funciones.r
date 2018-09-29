@@ -163,18 +163,11 @@ transformar_en_bipartito <- function(g_aut_art,data_acotado){
 ordenear_lista_articulos_by_vertex_attr <- function(art_name_list,vertex_list_articulos_acotado){
     orden_original <- data.frame(stringsAsFactors = FALSE, 
                                  art_id=art_name_list)
-    # print("----")
-    # glimpse(art_name_list)
-    # print("----")
-    # glimpse(orden_original)
-    # print("----")
-    # glimpse(vertex_list_articulos_old)
-    # print("----")
+
     resultado <-  orden_original %>% 
         left_join(vertex_list_articulos_acotado,by=c('art_id'='art_id')) %>%
         select(art_id,articulo_id,anio,cant_autores,fuerza_colaboracion)
-    
-    
+
     resultado
 }
 
@@ -274,40 +267,36 @@ extraccion_grafo_coautoria <- function(grafo_bipartito,edgelist_para_grafo,width
     # measure of collaboration strength illustrated in Fig. 5. Newman 2004 ; entonces el tamaño del nodo esta con que tan colaborativo fue
     igraph:::V(g_aut)$size <- 10 + (igraph:::V(g_aut)$fuerza_colaboracion*10) # *10 para que aumente el tamaño , dejando de ser decimal
     
-
-    
-    elist <- igraph:::as_edgelist(g_aut)
-    
+    # elist <- igraph:::as_edgelist(g_aut)
+    # igraph:::as_data_frame(g_aut,what="edges")
     # glimpse(elist)
     
     lista_autores <- lista_vertices_autores(edgelist_para_grafo) %>% select(aut_id,autor)
     
-    elist_df <- data.frame(elist,stringsAsFactors = FALSE) %>% as_tibble() %>% 
-        rename(autor1=X1,autor2=X2) %>% 
+    #data.frame(elist,stringsAsFactors = FALSE)
+    elist_df <- igraph:::as_data_frame(g_aut,what="edges") %>% as_tibble() %>% 
+        rename(autor1=from,autor2=to) %>% 
         mutate(id=paste0(autor1,"--",autor2)) %>% 
         left_join(lista_autores,by=c('autor1'='aut_id')) %>% 
         rename(autor1_label=autor) %>% 
         left_join(lista_autores,by=c('autor2'='aut_id')) %>% 
         rename(autor2_label=autor) %>% 
         mutate(autores=paste0(autor1_label,' - ',autor2_label))
+
     
-    # glimpse(elist_df)
-    
-    # glimpse(elist)
-    # glimpse(data.frame(elist))
-    
-    
-    fuerza_colaboracion_output <- vector(mode='double',length=nrow(elist))
-    autores_output <- vector(mode='character',length=nrow(elist))
-    for (idx in seq_along(1:nrow(elist))) {
-        fuerza_colaboracion_output[[idx]] <- (fuerza_colaboracion_relacion(elist[idx,],edgelist_para_grafo))
+    fuerza_colaboracion_output <- vector(mode='double',length=nrow(elist_df))
+    autores_output <- vector(mode='character',length=nrow(elist_df))
+    for (idx in seq_along(1:nrow(elist_df))) {
+        fuerza_colaboracion_output[[idx]] <- (fuerza_colaboracion_relacion(elist_df[idx,],edgelist_para_grafo))
         # autores_output[[idx]] <- paste0(elist[idx,1],' - ',elist[idx,2])
     }
     
     g_aut <- g_aut %>% 
         igraph:::set_edge_attr(igraph:::E(g_aut),name = "id",elist_df %>% pull(id)) %>% 
         igraph:::set_edge_attr(igraph:::E(g_aut),name = "fuerza_colaboracion",fuerza_colaboracion_output) %>% 
-        igraph:::set_edge_attr(igraph:::E(g_aut),name = "autores",elist_df %>% pull(autores))
+        igraph:::set_edge_attr(igraph:::E(g_aut),name = "autores",elist_df %>% pull(autores)) %>% 
+        igraph:::set_edge_attr(igraph:::E(g_aut),name = "autor1_label",elist_df %>% pull(autor1_label)) %>% 
+        igraph:::set_edge_attr(igraph:::E(g_aut),name = "autor2_label",elist_df %>% pull(autor2_label))
         # igraph:::set_edge_attr(igraph:::E(g_aut),name = "autores",autores_output)
     
     
@@ -319,6 +308,7 @@ extraccion_grafo_coautoria <- function(grafo_bipartito,edgelist_para_grafo,width
     
     #criterio_visualizacion <- E(g_aut)$weight # viejo, por peso, que el peso = cant articulos relacion
     criterio_visualizacion <- igraph:::E(g_aut)$fuerza_colaboracion
+
     threshold <- max(criterio_visualizacion) /3  # par ahacer 3 bins de colores
     edge_color <- colores_edges_en_n_bins(criterio_visualizacion,
                                           bins = 3,
@@ -357,13 +347,26 @@ width_edges_en_n_bins <- function(listado_valores_edges_criterio,bins=3,width_mu
 
 colores_edges_en_n_bins <- function(listado_valores_edges_criterio,bins=3,color_palette=c("#1B9E77","#D95F02","#7570B3")){
     criterio_visualizacion <- listado_valores_edges_criterio
+    # cant valores diferentes
+    cant_val_diferentes <- length(unique(listado_valores_edges_criterio))
     threshold <- max(criterio_visualizacion) / bins  # par ahacer 3 bins de colores
-    edge_color <- if_else(criterio_visualizacion < threshold,
-                          color_palette[1],
-                          if_else(criterio_visualizacion <  threshold*2,
-                                  color_palette[2],
-                                  color_palette[3])
-    )
+    
+    # default al color 1 de la paleta
+    edge_color <- rep(color_palette[1],times=length(criterio_visualizacion)) 
+    
+    if(cant_val_diferentes < bins){
+         
+    }else{
+        # si es mayor iguala bins, aplica la logica
+        edge_color <- if_else(criterio_visualizacion < threshold,
+                              color_palette[1],
+                              if_else(criterio_visualizacion <  threshold*2,
+                                      color_palette[2],
+                                      color_palette[3])
+        )    
+    }
+    
+    
     edge_color
 }
 
@@ -371,31 +374,25 @@ colores_edges_en_n_bins <- function(listado_valores_edges_criterio,bins=3,color_
 # se da por implicito que este edgelist es el mismo que se usa para armar el grafo
 # de esta forma ya tiene los filtros de fechasy secciones
 fuerza_colaboracion_relacion <- function(edge_analizar_ends,edgelist_para_grafo){
-    # edge_analizar_ends <- ends(g_aut,edge_ejemplo)
-    # edgelist_para_grafo <- articulos_todos_grafo(db_limpia,cota_anio,cota_seccion)
-    # dame los ends
-    # de los ends, dame los articulos en los que figuren los 2.
+
+    autor1_end <- edge_analizar_ends %>% pull(autor1_label)
+    autor2_end <- edge_analizar_ends %>% pull(autor2_label)
+
     resultado <- edgelist_para_grafo %>% 
-        filter(str_detect(autores,edge_analizar_ends[1]) & str_detect(autores,edge_analizar_ends[2])) %>% 
+        filter(str_detect(autores,autor1_end) & str_detect(autores,autor2_end)) %>% 
         count(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion, autores) %>%
         count(fuerza_colaboracion) %>% 
         summarise(fuerza_colaboracion_total = sum(fuerza_colaboracion)) %>% as.double()
+
     resultado
 }
 
 # FUNCIONES: ART ASOC -----------------------------------------------------------------
 
 get_vertex_from_click_vertex <- function(grafo,input_click){
-    
-    # print("---------------------")
-    # glimpse(input_click)
-    # print("---------------------")
+
     filter_cond <- str_detect(igraph:::V(grafo)$id,pattern = input_click)
     vertice <- igraph:::V(grafo)[filter_cond]
-    
-    # print("--------SHOW click vertex-----------")
-    # show_details_vertex(vertice)
-    # print("---------------------")
     
     vertice
 }
@@ -418,27 +415,19 @@ generar_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
         warning("el parametro G debe ser un grafo !")
         stopifnot(igraph:::is_igraph(g))
     }
-    
-    
-    glimpse(vertice)
-    glimpse(g)
+
     subgrafo_autor_ego <- igraph:::make_ego_graph(graph = g, # para el grafo de la red
                                               order=1, # 1 nivel de vecinos
                                               nodes = vertice, # donde el vertice tenga de nombre el selected
                                               mode = "all" )
-    
-    # glimpse(subgrafo_autor)
-    # igraph:::edge_attr_names(subgrafo_autor[[1]])
-    
-    # g2 <- induced_subgraph(g, 1:7)
-    
+
     #https://stackoverflow.com/questions/44712041/subset-igraph-object-to-just-2nd-order-ego-graph-of-certain-vertices
     # ego_list <- make_ego_graph(graph, order=2, nodes=V(graph)$condition=="something")
     
     subgrafo_autor <- NULL
     for (i in seq_along(subgrafo_autor_ego)){
         x <- subgrafo_autor_ego[[i]]
-        subgrafo_autor <- graph.union(subgrafo_autor, x)
+        subgrafo_autor <- igraph:::graph.union(subgrafo_autor, x)
     }
     
     
@@ -447,9 +436,9 @@ generar_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
         igraph:::set_edge_attr(name="width",value = igraph:::E(subgrafo_autor)$weight) %>%
         igraph:::set_edge_attr(name="color",value = colores_edges_en_n_bins(igraph:::E(subgrafo_autor)$weight)) %>% 
         igraph:::set_vertex_attr(name = "title",value = igraph:::V(subgrafo_autor)$name)
-    tmp2 <- as_data_frame(sg2) %>% as_tibble() %>% mutate(nombre = paste0(from," - ",to,'<br />',"fuerza colaboración:",fuerza_colaboracion)) %>% pull(nombre)
+    tmp2 <- igraph:::as_data_frame(sg2) %>% as_tibble() %>% mutate(nombre = paste0(from," - ",to,'<br />',"fuerza colaboración:",fuerza_colaboracion)) %>% pull(nombre)
     
-    
+
     sg2 <- sg2 %>% 
         igraph:::set_edge_attr(name="title",value = tmp2)
     
@@ -525,6 +514,24 @@ generar_visualizacion_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
     resultado_visnet <- generar_visualizacion_subgrafo_vecinos_from_subgrafo(sg2,random_seed)
     resultado_visnet
     
+}
+
+armar_heatmap_ggplot_from_grafo <- function(g, color_palette="Dark2"){
+    edge_list <- igraph:::as_data_frame(g,what="edges") %>% as_tibble()
+    
+    # var1 <- edge_list %>% pull(from)
+    # var2 <- edge_list %>% pull(to)
+    # value <- edge_list %>% pull(fuerza_colaboracion)
+    
+    plot_out <- ggplot(edge_list, aes(autor1_label,
+                                      autor2_label, 
+                                      fill=fuerza_colaboracion)) + 
+        scale_colour_brewer(palette = color_palette) +
+        geom_raster() + 
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+        labs(x = "", y = "")
+        
+    plot_out
 }
 
 
@@ -846,9 +853,6 @@ fuerza_colaboracion_autorut_expected_validator <- function(current_autor, data_a
 
 # VER DETALLE VERTEX
 show_details_vertex <- function(filter_vertex){
-    
-    igraph:::vertex
-    
 
     cat(paste0("\nid:",filter_vertex$id,
                "\nname:",filter_vertex$name,
