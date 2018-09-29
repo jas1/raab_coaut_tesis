@@ -145,6 +145,7 @@ body <- dashboardBody(
                                                                                br(),
                                                                                downloadButton (outputId = "download_art_asoc",
                                                                                                label = "Bajar Art. Asoc."),
+                                                                               uiOutput("output_info_seleccion_vertex_degree",inline = TRUE), # class="hidden_degree")
                                                                                fluidRow(
                                                                                    column(6,
                                                                                           conditionalPanel('input.input_static_network_click_vertex != null && input.input_static_network_click_edge == ""',
@@ -158,13 +159,19 @@ body <- dashboardBody(
                                                                                    ), # fin col 6 parte 1
                                                                                    column(6, 
                                                                                           conditionalPanel('input.input_static_network_click_vertex != null && input.input_static_network_click_edge == ""',
-                                                                                                           tabsetPanel(type = "tabs",
-                                                                                                                       id="coaut_tabs",
-                                                                                                                       tabPanel("Subred de coautoría",
-                                                                                                                                visNetworkOutput("output_subgrafo_coautoria_autor")),
-                                                                                                                       tabPanel("Heatmap de coautoría",
-                                                                                                                                plotlyOutput('output_heatmap_coautoria_autor'))
-                                                                                                                       )
+                                                                                                           
+                                                                                                           # conditionalPanel('grado_0 != "0" ',
+                                                                                                                                tabsetPanel(type = "tabs",
+                                                                                                                                        id="coaut_tabs",
+                                                                                                                                        tabPanel("Subred de coautoría",
+                                                                                                                                                 visNetworkOutput("output_subgrafo_coautoria_autor")),
+                                                                                                                                        tabPanel("Heatmap de coautoría",
+                                                                                                                                                 plotlyOutput('output_heatmap_coautoria_autor'))
+                                                                                                                                )# fin tabs panel coaut
+                                                                                                                            # )# fin conditional panel degree
+                                                                                                           
+                                                                                                           
+                             
                                                                                           ), # fin condicional vertex
                                                                                           conditionalPanel('input.input_static_network_click_vertex == null && input.input_static_network_click_edge != null',
                                                                                                            br()

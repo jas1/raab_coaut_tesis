@@ -5,3 +5,7 @@
 .datatables {
 	font-size: 10px;
 }
+
+#grado_0 {
+    display:none;
+}

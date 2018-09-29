@@ -353,6 +353,22 @@ server <- function(input, output,session) {
         ggplotly(plot_out) 
     })
     
+    info_seleccion_vertex_degree_reactive <- reactive({
+        g <- static_network_grafo_reactive()
+        
+        vertice <- get_vertex_from_click_vertex(g,input$input_static_network_click_vertex)
+        
+        grado <- igraph:::degree(g,vertice)
+        #glimpse(grado)
+        as.numeric(grado)
+    })
+    
+    output$output_info_seleccion_vertex_degree <- renderUI({
+
+        span (info_seleccion_vertex_degree_reactive(),id="grado_0") # me esta devolviendo id 0 :S
+    })
+    
+    
     output$output_info_seleccion_vertex <- renderUI({
         g <- static_network_grafo_reactive()
 
