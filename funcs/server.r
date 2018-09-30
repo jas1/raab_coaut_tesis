@@ -938,18 +938,11 @@ server <- function(input, output,session) {
     })
     
     temporal_grafos_acum_reactive <- reactive({
-        tmp_anios_acum <- global_periodos_disponibles %>% as_tibble() 
-        
-        tmp_anios_acum <- tmp_anios_acum %>% rename(periodo = value)
-        tmp_anios_acum$periodo_agrup <- Reduce(paste, as.character(tmp_anios_acum$periodo), accumulate = TRUE)
-        tmp_anios_acum <- tmp_anios_acum %>% 
-            mutate(periodos_lista = str_split(periodo_agrup,pattern = " ")) %>% 
-            select(periodo,periodos_lista)
-        
-        tmp_anios_acum_2 <- map(tmp_anios_acum$periodos_lista, ~ grafo_para_periodo_x(.x,
-                                                                                      cota_seccion,
-                                                                                      db_limpia,
-                                                                                      static_edge_width_multiplier)) 
+
+        tmp_anios_acum_2 <- temporal_generar_grafos_acumulados(global_periodos_disponibles,
+                                                               cota_seccion,
+                                                               db_limpia,
+                                                               static_edge_width_multiplier)
         tmp_anios_acum_2
     })
     
@@ -1088,20 +1081,44 @@ server <- function(input, output,session) {
     })
     
     temporal_dinamico_acumulado_reactive <- reactive({ 
+        start_time_net<- Sys.time()
+        print(start_time_net)
         tmp_nets <- temporal_acumulado_network_pkg_reactive()
+        fin_time_net <- Sys.time()
+        print(fin_time_net)
+        print(paste0("elapsed net:",fin_time_net-start_time_net))
         tnet_time <- networkDynamic::networkDynamic(network.list=tmp_nets,
                                                     vertex.pid='vertex.names',
                                                     create.TEAs = TRUE)
+        fin_time_netdyn_teas <- Sys.time()
+        print(fin_time_netdyn_teas)
+        print(paste0("elapsed teas:",fin_time_netdyn_teas-fin_time_net))
         tnet_time
     })
     
     output$temporal_dinamico_acumulado <- ndtv:::renderNdtvAnimationWidget({
         
         current_test_tnet <- temporal_dinamico_acumulado_reactive()
+        
+        # glimpse(current_test_tnet)
+        # .. ..$ na                        : logi FALSE
+        # .. ..$ vertex.names              : chr "a0058"
+        # .. ..$ active                    : num [1, 1:2] 1 18
+        # .. ..$ anio.active               :List of 2
+        # .. ..$ cant_autores.active       :List of 2
+        # .. ..$ fuerza_colaboracion.active:List of 2
+        # .. ..$ id.active                 :List of 2
+        # .. ..$ id_old.active             :List of 2
+        # .. ..$ label.active              :List of 2
+        # .. ..$ size.active               :List of 2
+        
+        rend0 <- Sys.time()
+        print(rend0)
+        
         n_bins <- 3 # 5 : descartado x arcoiris
         color_palette <- "Blues"#"YlGnBu" #"YlOrBr" # Spectral 
         # render.d3movie(net, output.mode = 'htmlWidget')
-        render.d3movie(current_test_tnet, 
+        ret_render <- render.d3movie(current_test_tnet, 
                        usearrows = F, 
                        displaylabels = F, 
                        label=function(slice){slice%v%'vertex.names'},
@@ -1137,6 +1154,12 @@ server <- function(input, output,session) {
                        render.par=list(tween.frames = 10, show.time = F),
                        plot.par=list(mar=c(0,0,0,0)),
                        output.mode='htmlWidget' )
+        
+        rend1 <- Sys.time()
+        print(rend1)
+        print(paste0("elapsed render:",rend1-rend0))
+        
+        ret_render
     })
 
 }

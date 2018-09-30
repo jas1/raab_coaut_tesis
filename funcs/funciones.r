@@ -816,6 +816,24 @@ grafo_para_periodo_x <- function(periodos,cota_seccion,db_limpia,static_edge_wid
     g_coaut
 }
 
+temporal_generar_grafos_acumulados <- function(global_periodos_disponibles,
+                                               cota_seccion,
+                                               db_limpia,
+                                               static_edge_width_multiplier){
+    tmp_anios_acum <- global_periodos_disponibles %>% as_tibble() 
+    
+    tmp_anios_acum <- tmp_anios_acum %>% rename(periodo = value)
+    tmp_anios_acum$periodo_agrup <- Reduce(paste, as.character(tmp_anios_acum$periodo), accumulate = TRUE)
+    tmp_anios_acum <- tmp_anios_acum %>% 
+        mutate(periodos_lista = str_split(periodo_agrup,pattern = " ")) %>% 
+        select(periodo,periodos_lista)
+    
+    tmp_anios_acum_2 <- map(tmp_anios_acum$periodos_lista, ~ grafo_para_periodo_x(.x,
+                                                                                  cota_seccion,
+                                                                                  db_limpia,
+                                                                                  static_edge_width_multiplier)) 
+    tmp_anios_acum_2
+}
 
 
 # FUNCIONES: debugging ---------------------------------------------------------------
