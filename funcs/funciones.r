@@ -835,6 +835,31 @@ temporal_generar_grafos_acumulados <- function(global_periodos_disponibles,
     tmp_anios_acum_2
 }
 
+generar_nets_from_igraph <- function(listado_grafos_igraph){
+    
+    nets <- map(listado_grafos_igraph,intergraph::asNetwork)
+    nets <- map(nets,delete.vertex.attribute,"id_old")
+    nets <- map(nets,delete.vertex.attribute,"vertex.names")
+    nets <- map(nets,delete.edge.attribute,"autor1_label")
+    nets <- map(nets,delete.edge.attribute,"autor2_label")
+    
+    # delete.vertex.attribute(net,"id_old")
+    # delete.vertex.attribute(net,"vertex.names")
+    # delete.edge.attribute(net,"autor1_label")
+    # delete.edge.attribute(net,"autor2_label")
+    
+    nets
+    
+}
+
+
+generar_dyn_net_from_nets <- function(listado_nets){
+    tnet_time <- networkDynamic::networkDynamic(network.list=listado_nets,
+                                                vertex.pid='label',
+                                                create.TEAs = TRUE)
+    tnet_time
+}
+
 
 # FUNCIONES: debugging ---------------------------------------------------------------
 

@@ -1075,24 +1075,11 @@ server <- function(input, output,session) {
     # agarrar el dinamico calculado , y sobre eso hacer las transformaciones de networkDynamic
     
     temporal_acumulado_network_pkg_reactive<- reactive({
-        tmp_anios_acum_2 <- temporal_grafos_acum_reactive()
-        nets <- map(tmp_anios_acum_2,intergraph::asNetwork)
-        nets
+        nets <- generar_nets_from_igraph(temporal_grafos_acum_reactive())
     })
     
     temporal_dinamico_acumulado_reactive <- reactive({ 
-        start_time_net<- Sys.time()
-        print(start_time_net)
-        tmp_nets <- temporal_acumulado_network_pkg_reactive()
-        fin_time_net <- Sys.time()
-        print(fin_time_net)
-        print(paste0("elapsed net:",fin_time_net-start_time_net))
-        tnet_time <- networkDynamic::networkDynamic(network.list=tmp_nets,
-                                                    vertex.pid='vertex.names',
-                                                    create.TEAs = TRUE)
-        fin_time_netdyn_teas <- Sys.time()
-        print(fin_time_netdyn_teas)
-        print(paste0("elapsed teas:",fin_time_netdyn_teas-fin_time_net))
+        tnet_time <- generar_dyn_net_from_nets(temporal_acumulado_network_pkg_reactive())
         tnet_time
     })
     
@@ -1121,7 +1108,9 @@ server <- function(input, output,session) {
         ret_render <- render.d3movie(current_test_tnet, 
                        usearrows = F, 
                        displaylabels = F, 
-                       label=function(slice){slice%v%'vertex.names'},
+                       # label=function(slice){slice%v%'vertex.names'},
+                       label=function(slice){slice%v%'label'},
+                       
                        bg="#ffffff", 
                        #vertex.border="#FAFAFA",
                        vertex.border="lightgrey",
@@ -1142,7 +1131,8 @@ server <- function(input, output,session) {
                        edge.lwd = function(slice){ (slice %e% "fuerza_colaboracion") * 2 },
                        edge.col = function(slice){slice %e% "color"},
                        vertex.tooltip =  function(slice){
-                           paste("<b>Autor:</b>", (slice %v% "vertex.names") , 
+                           # paste("<b>Autor:</b>", (slice %v% "vertex.names") , 
+                             paste("<b>Autor:</b>", (slice %v% "label") , 
                                  "<br>",
                                  "<b>Fuerza Colaboración:</b>",
                                  (slice %v% "fuerza_colaboracion"))},
