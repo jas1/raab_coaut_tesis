@@ -452,7 +452,50 @@ body <- dashboardBody(
                                       )) # fin column 6
                                   )# fin fluid row
                               )# fin content div
-                    )# fin bs append Visualización dinámica - Acumulado
+                    ) #%>% # fin bs append Visualización dinámica - Acumulado
+                
+                # temporal - dinamico - acumulado  ----------------------------------------
+                # descartado porque las agregaciones no se hacen bien.
+                # estaria interesante algo de esto
+                # esto por ahora se puede analizar las agregaciones a mano 
+                # en la parte estatica
+                # bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+                #     bs_append(title = "Visualización dinámica - Básico", 
+                #               content = div(
+                #                   fluidRow(
+                #                       column(6,div(
+                #                           ndtv:::ndtvAnimationWidgetOutput("temporal_dinamico_basico"))
+                #                       ),# fin column 6
+                #                       column(6,
+                #                              div(
+                #                                  pickerInput(
+                #                                      inputId = "input_temporal_basico_periodos", 
+                #                                      label = "Agrupamiento Periodos",
+                #                                      #choices = global_periodos_disponibles,
+                #                                      choices = list(), 
+                #                                      options = list(
+                #                                          onInitialize = I('function() { this.setValue(""); }'),
+                #                                          'actions-box' = TRUE, 
+                #                                          size = 10,
+                #                                          'selected-text-format' = "count > 3",
+                #                                          'deselect-all-text' = "Ninguno",
+                #                                          'select-all-text' = "Todos",
+                #                                          'none-selected-text' = "Sin Selección",
+                #                                          'count-selected-text' = "{0} seleccionados."
+                #                                      ), 
+                #                                      multiple = FALSE
+                #                                  )
+                #                              ),
+                #                              div(
+                #                                 p("La visualización puede llegar a tardar 5 mins en generarse."),
+                #                                 p(paste0("Periodos Afectados:",paste0(collapse = ", ",cota_anio))),# fin periodos
+                #                                 p("Cada instante en el tiempo es un periodo."),
+                #                                 p("Color nodos: 3 escala azules; representan la Fuerza de colaboracion de autores.")
+                #                       )) # fin column 6
+                #                   )# fin fluid row
+                #               )# fin content div
+                #     )# fin bs append Visualización dinámica - Acumulado
+                
                 
         )# fin tab temporal
     )

@@ -290,9 +290,14 @@ server <- function(input, output,session) {
         # glimpse(coautores[[1]][1])
         # glimpse(coautores[[1]][2])
         # autor,articulo_id,autor_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores
+
+        listado_autores <- lista_vertices_autores(static_data_base())
+        current_autor_1 <- listado_autores %>% filter(aut_id==coautores[[1]][1]) %>% pull(autor)
+        current_autor_2 <- listado_autores %>% filter(aut_id==coautores[[1]][2]) %>% pull(autor)
+        
         ret <- static_data_base() %>% 
-            filter(str_detect(autores,coautores[[1]][1])) %>%
-            filter(str_detect(autores,coautores[[1]][2])) %>%
+            filter(str_detect(autores,current_autor_1)) %>%
+            filter(str_detect(autores,current_autor_2)) %>%
             select(autores,anio,titulo,url,cant_autores,fuerza_colaboracion) %>%
             mutate(articulo=paste0("<p><a target='_blank' href='",url,"'>",titulo,"</a></p>")) %>% 
             group_by(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% tally() %>% 
@@ -686,7 +691,8 @@ server <- function(input, output,session) {
     })
     
     output$comunidades_result_metricas_listado <- DT::renderDataTable({ 
-        resultado_dt <- estructura_grafo_para_DT(listado_comunidades_estructura_reactive())
+        str_comunidades <- listado_comunidades_estructura_reactive()
+        resultado_dt <- estructura_grafo_para_DT(str_comunidades)
         resultado_dt
     })
     
@@ -700,23 +706,17 @@ server <- function(input, output,session) {
     
     # comunidades - autores - tabla ---------------------------------------------------------
     
-    listado_comunidades_reactive <- reactive({
-        
-        current_comunidad <- community_reactive()
-        
-        nodo_comunidad <- armar_df_membership(current_comunidad)
-        
-        listado_comunidades <- nodo_comunidad %>% arrange(member) %>% 
-            group_by(member) %>% summarize(n=n(),autores=paste(collapse='; ',nombre)) %>% 
-            arrange(desc(n)) %>% rename(comunidad=member,autores=n)
-        listado_comunidades
-        
+    listado_comunidades_autores_reactive <- reactive({
+        autores_db <- static_data_base()
+        current_comunidades <- community_reactive()
+        result <- listado_comunidades_autores (current_comunidades,autores_db)
+        result
     })
     
     output$cantidad_comunidades_metricas <- DT::renderDataTable({ 
         DT::datatable(
             options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')),
-            listado_comunidades_reactive(),
+            listado_comunidades_autores_reactive(),
             escape = FALSE,
             selection = 'single')
     })
@@ -725,14 +725,14 @@ server <- function(input, output,session) {
     
     output$download_com_metricas_aut <- downloadHandler( 
         filename = paste('com_metricas_aut-', Sys.Date(),'-',input$comunidades_sel_algo, '.csv', sep=''), content = function(file) {
-            write.csv(listado_comunidades_reactive(), file,row.names = FALSE)
+            write.csv(listado_comunidades_autores_reactive(), file,row.names = FALSE)
         })  
     
     # comunidades - detalle - info ----------------------------------------------------
     
     output$detalle_comunidad_seleccionada <- renderUI({
         
-        current_com_selected <- listado_comunidades_reactive()[input$cantidad_comunidades_metricas_rows_selected,]
+        current_com_selected <- listado_comunidades_autores_reactive()[input$cantidad_comunidades_metricas_rows_selected,]
         mensaje <- paste0('Se selecciono la comunidad: ' ,current_com_selected[1])
         mensaje2 <- paste0('Con una cantidad de ' ,current_com_selected[2], ' integrantes. ')
         mensaje3 <- paste0('Siendo: ' ,current_com_selected[3] )
@@ -744,7 +744,7 @@ server <- function(input, output,session) {
         req(input$cantidad_comunidades_metricas_rows_selected)
         current_comunidades <- community_reactive()
         
-        current_com_selected <- listado_comunidades_reactive()[input$cantidad_comunidades_metricas_rows_selected,]
+        current_com_selected <- listado_comunidades_autores_reactive()[input$cantidad_comunidades_metricas_rows_selected,]
         
         current_id <- current_com_selected[,1] %>% as.character()
         
@@ -773,11 +773,13 @@ server <- function(input, output,session) {
     
     detalle_comunidad_seleccionada_articulos_reactive <- reactive({
         
-        current_com_selected <- listado_comunidades_reactive()[input$cantidad_comunidades_metricas_rows_selected,]
+        current_com_selected <- listado_comunidades_autores_reactive()[input$cantidad_comunidades_metricas_rows_selected,]
         autores_comunidad <- str_split(current_com_selected[3],pattern = '; ') %>% unlist()
+        autores_db <- static_data_base()
+        input_periodos <-  input$input_static_periodos
         
-        filtro_coautores <- static_data_base() %>% 
-            filter(anio %in% input$input_static_periodos) %>% 
+        filtro_coautores <- autores_db %>% 
+            filter(anio %in% input_periodos) %>% 
             filter(autor %in% autores_comunidad) %>%
             select(autores,anio,titulo,url,cant_autores,fuerza_colaboracion) %>%
             mutate(articulo=paste0("<p><a target='_blank' href='",url,"'>",titulo,"</a></p>")) %>% 
@@ -865,7 +867,7 @@ server <- function(input, output,session) {
         # input$temporal_estructura_refrescar_boton
         updateSelectizeInput(session, "temporal_sel_vars", choices = temporal_estructuras_reactive_vars())
     })
-    
+
     # anios sin acumular
     temporal_basico_grafos_reactive <- reactive({
         # temporal_grafos_reactive_acum()
@@ -903,10 +905,6 @@ server <- function(input, output,session) {
             estr_grafos <- dplyr::bind_rows(calculo_grafos, .id = 'names') %>% rename(periodo=names)  
             
             grafo_estr_as_stack <- estr_grafos %>% 
-                select(-str_largest_cliques,
-                       -diametro_participantes,
-                       -str_dist_lejanos_1,
-                       -str_dist_lejanos_2) %>%
                 select(periodo,input$temporal_sel_vars) %>%
                 gather(key=metrica,value='valor',-periodo) %>%
                 left_join(temporal_estructuras_reactive_vars_tibble(),by=c("metrica"="value")) %>%
@@ -968,10 +966,6 @@ server <- function(input, output,session) {
             # glimpse(estr_grafos)
             
             grafo_estr_as_stack <- estr_grafos %>% 
-                select(-str_largest_cliques,
-                       -diametro_participantes,
-                       -str_dist_lejanos_1,
-                       -str_dist_lejanos_2) %>%
                 select(periodo,input$temporal_sel_vars_2) %>%
                 gather(key=metrica,value='valor',-periodo) %>%
                 left_join(temporal_estructuras_reactive_vars_tibble(),by=c("metrica"="value")) %>%
@@ -1144,6 +1138,123 @@ server <- function(input, output,session) {
                        render.par=list(tween.frames = 10, show.time = F),
                        plot.par=list(mar=c(0,0,0,0)),
                        output.mode='htmlWidget' )
+        
+        rend1 <- Sys.time()
+        print(rend1)
+        print(paste0("elapsed render:",rend1-rend0))
+        
+        ret_render
+    })
+    # temporal - dinamico - individual -----------------------------------------
+    # agarrar el dinamico calculado , y sobre eso hacer las transformaciones de networkDynamic
+    
+    options_temporal_basico_periodos_reactive <- reactive({
+        # como son 18 periodos , solo acepto divisores de 18
+        # 1,3,4,9
+        cantidad <- 18
+        divisores <- c(1,2,3,6,9,18)
+        opciones <- rev(c(cantidad/divisores)) 
+        
+        opciones
+    })
+    
+    observe({
+        # req(input$anio)
+        # input$temporal_estructura_refrescar_boton
+        updateSelectizeInput(session, "input_temporal_basico_periodos", choices =options_temporal_basico_periodos_reactive() )
+    })
+    
+    temporal_basico_network_pkg_reactive<- reactive({
+        nets <- generar_nets_from_igraph(temporal_basico_grafos_reactive())
+    })
+    
+    temporal_dinamico_basico_reactive <- reactive({ 
+        tnet_time <- generar_dyn_net_from_nets(temporal_basico_network_pkg_reactive())
+        tnet_time
+    })
+    
+    output$temporal_dinamico_basico <- ndtv:::renderNdtvAnimationWidget({
+        
+        req(input$input_temporal_basico_periodos)
+        
+        input_aggregation_value <- as.numeric(input$input_temporal_basico_periodos)
+        
+        current_test_tnet <- temporal_dinamico_basico_reactive()
+        
+        # glimpse(current_test_tnet)
+        # .. ..$ na                        : logi FALSE
+        # .. ..$ vertex.names              : chr "a0058"
+        # .. ..$ active                    : num [1, 1:2] 1 18
+        # .. ..$ anio.active               :List of 2
+        # .. ..$ cant_autores.active       :List of 2
+        # .. ..$ fuerza_colaboracion.active:List of 2
+        # .. ..$ id.active                 :List of 2
+        # .. ..$ id_old.active             :List of 2
+        # .. ..$ label.active              :List of 2
+        # .. ..$ size.active               :List of 2
+        
+        rend0 <- Sys.time()
+        print(rend0)
+        main_title_agg <- paste('Coautorías, ',
+                                input_aggregation_value,
+                                '-años agregados')
+        slice_params<-list(start=0,end=18,
+                           interval=input_aggregation_value, 
+                        aggregate.dur=input_aggregation_value,
+                        rule="earliest")#latest # earliest
+        
+        current_test_tnet<-compute.animation(current_test_tnet,
+                                             slice.par=slice_params,
+                                       default.dist=3,
+                                       animation.mode='kamadakawai',
+                                       # animation.mode='MDSJ',
+                                       verbose=TRUE)# FALSE
+        
+        
+        n_bins <- 3 # 5 : descartado x arcoiris
+        color_palette <- "Blues"#"YlGnBu" #"YlOrBr" # Spectral 
+        # render.d3movie(net, output.mode = 'htmlWidget')
+        ret_render <- render.d3movie(current_test_tnet, 
+                                     usearrows = FALSE, 
+                                     displaylabels = FALSE, 
+                                     # label=function(slice){slice%v%'vertex.names'},
+                                     label=function(slice){slice%v%'label'},
+                                     
+                                     bg="#ffffff", 
+                                     #vertex.border="#FAFAFA",
+                                     vertex.border="lightgrey",
+                                     vertex.cex = 0.5,
+                                     vertex.col = function(slice){
+                                         ret  <-  '#BABABA' # default color
+                                         current_slice_var <- (slice %v% "fuerza_colaboracion")
+                                         if( !is.null(current_slice_var)){
+                                             if( length(current_slice_var) < n_bins){
+                                                 # zVar <- (current_slice_var - mean(current_slice_var)) / sd(current_slice_var)
+                                                 arma_bins <- cut_number(current_slice_var, n = n_bins)
+                                                 levels(arma_bins ) <- brewer.pal(n_bins, color_palette)
+                                                 
+                                                 ret <- as.character(arma_bins)                                                 
+                                             }
+                                         }
+                                         ret
+                                     },
+                                     edge.lwd = function(slice){ (slice %e% "fuerza_colaboracion") * 2 },
+                                     edge.col = function(slice){slice %e% "color"},
+                                     vertex.tooltip =  function(slice){
+                                         # paste("<b>Autor:</b>", (slice %v% "vertex.names") , 
+                                         paste("<b>Autor:</b>", (slice %v% "label") , 
+                                               "<br>",
+                                               "<b>Fuerza Colaboración:</b>",
+                                               (slice %v% "fuerza_colaboracion"))},
+                                     edge.tooltip = function(slice){paste("<b>Autores:</b>", 
+                                                                          (slice %e% "autores"), 
+                                                                          "<br>",
+                                                                          "<b>Fuerza Colaboración:</b>",
+                                                                          (slice %e% "fuerza_colaboracion" ))},
+                                     render.par=list(tween.frames = 10, show.time = F),
+                                     plot.par=list(mar=c(0,0,0,0)),
+                                     output.mode='htmlWidget',
+                                     main=main_title_agg)
         
         rend1 <- Sys.time()
         print(rend1)

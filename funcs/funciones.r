@@ -553,15 +553,15 @@ calcular_estructura_sobre_grafo <- function(grafo_reactive_tmp){
     
     mas_lejanos <- igraph:::farthest_vertices(grafo_reactive_tmp)
     resultado$num_dist_lejanos <-  mas_lejanos$distance
-    resultado$str_dist_lejanos_1 <- names(mas_lejanos$vertice[1])
-    resultado$str_dist_lejanos_2 <- names(mas_lejanos$vertice[2])
+    #resultado$str_dist_lejanos_1 <- names(mas_lejanos$vertice[1])
+    #resultado$str_dist_lejanos_2 <- names(mas_lejanos$vertice[2])
     
-    resultado$diametro_participantes <- igraph:::get_diameter(grafo_reactive_tmp) %>% names() %>%paste0(collapse='; ')
+    #resultado$diametro_participantes <- igraph:::get_diameter(grafo_reactive_tmp) %>% names() %>%paste0(collapse='; ')
     
     largest_clique_str <- igraph:::largest_cliques(grafo_reactive_tmp) %>% unlist() %>% names()
     
     resultado$num_largest_cliques <- length(largest_clique_str )
-    resultado$str_largest_cliques <- largest_clique_str  %>%paste0(collapse='; ')
+    #resultado$str_largest_cliques <- largest_clique_str  %>%paste0(collapse='; ')
     resultado$porc_largest_cliques <- resultado$num_largest_cliques / resultado$cant_autores * 100 
     
     resultado$num_cliques <- igraph:::clique_num(grafo_reactive_tmp)
@@ -694,12 +694,22 @@ metricas_nodos_grafo <- function(grafo_reactive_tmp){
     triangulos_count$autor <-  igraph:::V(grafo_reactive_tmp)$name
     colnames(triangulos_count) <- c('count_triangles','autor')
     
-    estructura_red_df <- grado_valor %>% 
+    
+    # nombre nodo
+    nombres_nodos <- data.frame(nombre_autor=igraph:::V(grafo_reactive_tmp)$label,
+                                autor=igraph:::V(grafo_reactive_tmp)$name,
+                                stringsAsFactors = FALSE)
+
+    estructura_red_df <- nombres_nodos %>% 
+        inner_join(grado_valor) %>% 
         inner_join(betweeness_valores) %>%
         inner_join(eigen_valor) %>%
         inner_join(closeness_valor) %>%
         inner_join(page_rank_valor) %>%
-        inner_join(triangulos_count) 
+        inner_join(triangulos_count) %>% 
+        rename(id_autor=autor) %>% 
+        rename(autor=nombre_autor) %>% 
+        select(-id_autor)
     
     estructura_red_df
 }
@@ -744,6 +754,8 @@ arma_comunidad <- function(semilla_seed,tmp_grafo,comunidades_sel_algo){
     
     comunidad_sel_detalles
 }
+# nombre=names_memb, > nombres de los vertices
+# member=values_memb > comunidad de membresia
 armar_df_membership <- function(comunidad_sel_detalles){
     memb <- igraph:::membership(comunidad_sel_detalles)
     values_memb <- as.vector(memb)
@@ -792,7 +804,7 @@ estructura_comunidades_df <- function(current_grafo,current_base_autores,current
     for(i in 1:length(current_comunidad)){
         current_group <- igraph::groups(current_comunidad)[[i]]
         current_subgraph <- igraph:::induced_subgraph(current_grafo,current_group) 
-        current_autores <- igraph:::V(current_subgraph)$name
+        current_autores <- igraph:::V(current_subgraph)$label
         base_autores_tmp <- current_base_autores %>% filter(autor %in% current_autores)
         
         estructura_grafo_df <- calcular_estructura_grafo(current_subgraph,base_autores_tmp)
@@ -801,6 +813,30 @@ estructura_comunidades_df <- function(current_grafo,current_base_autores,current
     resul_acum$comunidad_id <- 1:length(current_comunidad)
     # glimpse(resul_acum)
     resul_acum
+}
+
+listado_comunidades_autores <- function(current_comunidad,autores_db){
+    
+    # nombre=names_memb, > nombres de los vertices
+    # member=values_memb > comunidad de membresia
+    nodo_comunidad <- armar_df_membership(current_comunidad)
+    tmp_autores <- lista_vertices_autores(autores_db)
+    
+    # glimpse(nodo_comunidad)
+    # 
+    # glimpse(tmp_autores)
+    
+    nodo_comunidad_2 <- nodo_comunidad %>% 
+        left_join(autores_db,by=c("nombre"="aut_id")) %>%
+        select(nombre,member,autor)
+    
+    listado_comunidades <- nodo_comunidad_2 %>% 
+        arrange(member) %>% 
+        group_by(member) %>% 
+        summarize(n=n(),autores=paste(collapse='; ',autor)) %>% 
+        arrange(desc(n)) %>% 
+        rename(comunidad=member,cant_autores=n)
+    listado_comunidades            
 }
 
 
