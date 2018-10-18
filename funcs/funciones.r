@@ -760,7 +760,7 @@ armar_df_membership <- function(comunidad_sel_detalles){
     memb <- igraph:::membership(comunidad_sel_detalles)
     values_memb <- as.vector(memb)
     names_memb <- names(memb) 
-    membership_df <- data.frame(nombre=names_memb,member=values_memb)
+    membership_df <- data.frame(nombre=names_memb,member=values_memb,stringsAsFactors = FALSE) %>% as_tibble()
     membership_df
 }
 armar_df_comunidades <- function(cantidad_coms,comunidad_sel_detalles,
@@ -828,7 +828,10 @@ listado_comunidades_autores <- function(current_comunidad,autores_db){
     
     nodo_comunidad_2 <- nodo_comunidad %>% 
         left_join(autores_db,by=c("nombre"="aut_id")) %>%
-        select(nombre,member,autor)
+        select(nombre,member,autor) %>% 
+        group_by(nombre,member,autor) %>% 
+        tally() %>% 
+        select(-n)
     
     listado_comunidades <- nodo_comunidad_2 %>% 
         arrange(member) %>% 
@@ -836,7 +839,7 @@ listado_comunidades_autores <- function(current_comunidad,autores_db){
         summarize(n=n(),autores=paste(collapse='; ',autor)) %>% 
         arrange(desc(n)) %>% 
         rename(comunidad=member,cant_autores=n)
-    listado_comunidades            
+    listado_comunidades
 }
 
 
