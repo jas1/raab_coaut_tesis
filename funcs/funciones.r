@@ -284,16 +284,21 @@ extraccion_grafo_coautoria <- function(grafo_bipartito,edgelist_para_grafo,width
         mutate(autores=paste0(autor1_label,' - ',autor2_label))
 
     
+    anios_output <- vector(mode='character',length=nrow(elist_df))
     fuerza_colaboracion_output <- vector(mode='double',length=nrow(elist_df))
     autores_output <- vector(mode='character',length=nrow(elist_df))
     for (idx in seq_along(1:nrow(elist_df))) {
-        fuerza_colaboracion_output[[idx]] <- (fuerza_colaboracion_relacion(elist_df[idx,],edgelist_para_grafo))
+        # fuerza_colaboracion_output[[idx]] <- (fuerza_colaboracion_relacion(elist_df[idx,],edgelist_para_grafo))
+        calculo_tmp <- fuerza_colaboracion_y_anios_relacion(elist_df[idx,],edgelist_para_grafo)
+        fuerza_colaboracion_output[[idx]] <- calculo_tmp$fuerza_colab
+        anios_output[[idx]] <- calculo_tmp$anios
         # autores_output[[idx]] <- paste0(elist[idx,1],' - ',elist[idx,2])
     }
     
     g_aut <- g_aut %>% 
         igraph:::set_edge_attr(igraph:::E(g_aut),name = "id",elist_df %>% pull(id)) %>% 
         igraph:::set_edge_attr(igraph:::E(g_aut),name = "fuerza_colaboracion",fuerza_colaboracion_output) %>% 
+        igraph:::set_edge_attr(igraph:::E(g_aut),name = "anios",anios_output) %>% 
         igraph:::set_edge_attr(igraph:::E(g_aut),name = "autores",elist_df %>% pull(autores)) %>% 
         igraph:::set_edge_attr(igraph:::E(g_aut),name = "autor1_label",elist_df %>% pull(autor1_label)) %>% 
         igraph:::set_edge_attr(igraph:::E(g_aut),name = "autor2_label",elist_df %>% pull(autor2_label))
@@ -373,18 +378,30 @@ colores_edges_en_n_bins <- function(listado_valores_edges_criterio,bins=3,color_
 # esto es una funcion que dado un edge, extraigo los nombres y busco los valores en los edgelist
 # se da por implicito que este edgelist es el mismo que se usa para armar el grafo
 # de esta forma ya tiene los filtros de fechasy secciones
-fuerza_colaboracion_relacion <- function(edge_analizar_ends,edgelist_para_grafo){
+fuerza_colaboracion_y_anios_relacion <- function(edge_analizar_ends,edgelist_para_grafo){
 
     autor1_end <- edge_analizar_ends %>% pull(autor1_label)
     autor2_end <- edge_analizar_ends %>% pull(autor2_label)
 
-    resultado <- edgelist_para_grafo %>% 
-        filter(str_detect(autores,autor1_end) & str_detect(autores,autor2_end)) %>% 
+    filtro_1 <- edgelist_para_grafo %>% 
+        filter(str_detect(autores,autor1_end) & str_detect(autores,autor2_end))
+    
+    fuerza_colab <- filtro_1 %>% 
         count(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion, autores) %>%
-        count(fuerza_colaboracion) %>% 
+        # count(fuerza_colaboracion) %>% 
         summarise(fuerza_colaboracion_total = sum(fuerza_colaboracion)) %>% as.double()
 
-    resultado
+    anios_edge <- filtro_1 %>% 
+        count(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion, autores) %>% 
+        select(anio) %>% count(anio) %>% mutate(anio2=paste0(anio,"[",n,"]")) %>% 
+        summarise(anios_total = paste(collapse=";",anio2)) %>% as.character()
+
+    ret <- list()
+    ret$fuerza_colab <- fuerza_colab
+    ret$anios <- anios_edge
+    
+    ret
+    # anio_relacion <- filtro_1 %>% count(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion, autores) %>%
 }
 
 # FUNCIONES: ART ASOC -----------------------------------------------------------------
@@ -395,6 +412,36 @@ get_vertex_from_click_vertex <- function(grafo,input_click){
     vertice <- igraph:::V(grafo)[filter_cond]
     
     vertice
+}
+
+
+get_art_asoc_from_click_edge <- function(input_edge,current_db){
+    coautores <- str_split(input_edge,"--")
+    # glimpse(coautores)
+    # glimpse(coautores[[1]][1])
+    # glimpse(coautores[[1]][2])
+    # autor,articulo_id,autor_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores
+    
+    listado_autores <- lista_vertices_autores(current_db)
+    current_autor_1 <- listado_autores %>% filter(aut_id==coautores[[1]][1]) %>% pull(autor)
+    current_autor_2 <- listado_autores %>% filter(aut_id==coautores[[1]][2]) %>% pull(autor)
+    
+    ret <- current_db %>% 
+        filter(str_detect(autores,current_autor_1)) %>%
+        filter(str_detect(autores,current_autor_2)) %>%
+        select(autores,anio,titulo,url,cant_autores,fuerza_colaboracion) %>%
+        mutate(articulo=paste0("<p><a target='_blank' href='",url,"'>",titulo,"</a></p>")) %>% 
+        group_by(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% tally() %>% 
+        select(autores,anio,articulo,cant_autores,fuerza_colaboracion)
+    
+    # autores,articulo_id,autor_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores
+    # glimpse(ret)
+    # descripciones_autores_df %>% 
+    #   filter(autor %in% input$click ) %>%
+    #   filter(periodo %in% input$anio )
+    # %>%
+    #   select(articulos,periodo)
+    ret
 }
 
 # dada la DB y un nombre de autor, devolver el lsitado
@@ -897,6 +944,89 @@ generar_dyn_net_from_nets <- function(listado_nets){
                                                 vertex.pid='label',
                                                 create.TEAs = TRUE)
     tnet_time
+}
+
+armar_render_ndtvd3_animacion <- function(current_test_tnet,
+                                          n_bins = 3,
+                                          color_palette = "Blues",
+                                          default_v_border="lightgrey",
+                                          default_v_color='#BABABA',
+                                          param_out_mode = 'htmlWidget'){
+    # 5 : descartado x arcoiris
+    #n_bins <-  3
+    #color_palette <- "Blues"#"YlGnBu" #"YlOrBr" # Spectral 
+    
+    print(Sys.time())
+    # glimpse(current_test_tnet)
+    # .. ..$ na                        : logi FALSE
+    # .. ..$ vertex.names              : chr "a0058"
+    # .. ..$ active                    : num [1, 1:2] 1 18
+    # .. ..$ anio.active               :List of 2
+    # .. ..$ cant_autores.active       :List of 2
+    # .. ..$ fuerza_colaboracion.active:List of 2
+    # .. ..$ id.active                 :List of 2
+    # .. ..$ id_old.active             :List of 2
+    # .. ..$ label.active              :List of 2
+    # .. ..$ size.active               :List of 2
+    
+    rend0 <- Sys.time()
+    print(rend0)
+    # render.d3movie(net, output.mode = 'htmlWidget')
+    ret_render <- render.d3movie(current_test_tnet, 
+                                 usearrows = F, 
+                                 displaylabels = F, 
+                                 # label=function(slice){slice%v%'vertex.names'},
+                                 label=function(slice){slice%v%'label'},
+                                 
+                                 bg="#ffffff", 
+                                 #vertex.border="#FAFAFA",
+                                 vertex.border=default_v_border,
+                                 vertex.cex = 0.5,
+                                 vertex.col = function(slice){
+                                     ret  <-  default_v_color # default color
+                                     current_slice_var <- (slice %v% "fuerza_colaboracion")
+                                     if( !is.null(current_slice_var)){
+                                         
+                                         # zVar <- (current_slice_var - mean(current_slice_var)) / sd(current_slice_var)
+                                         arma_bins <- cut_number(current_slice_var, n = n_bins)
+                                         levels(arma_bins ) <- brewer.pal(n_bins, color_palette)
+                                         
+                                         ret <- as.character(arma_bins)
+                                     }
+                                     ret
+                                 },
+                                 edge.lwd = function(slice){ (slice %e% "fuerza_colaboracion") * 2 },
+                                 edge.col = function(slice){slice %e% "color"},
+                                 vertex.tooltip =  function(slice){
+                                     curr_aut <- slice %v% "label"
+                                     curr_fc <- slice %v% "fuerza_colaboracion"
+                                     curr_anio <- slice %v% "anio"
+                                     # curr_anio <- str_split(curr_anio,pattern = ";" ) %>% unlist() %>% unique() %>% paste(collapse = ";")
+                                     
+                                     paste("<b>Autor:</b>", curr_aut , "<br>",
+                                           "<b>Fuerza Colaboración:</b>",curr_fc,"<br>",
+                                           "<b>Periodo:</b>",curr_anio
+                                     )},
+                                 edge.tooltip = function(slice){
+                                     
+                                     curr_aut <- slice %e% "autores"
+                                     curr_fc <- slice %e% "fuerza_colaboracion"
+                                     curr_anio <- slice %e% "anios"
+                                     # curr_anio <- str_split(curr_anio,pattern = ";" ) %>% unlist() %>% unique() %>% paste(collapse = ";")
+                                     
+                                     paste("<b>Autores:</b>",curr_aut, "<br>",
+                                           "<b>Fuerza Colaboración:</b>",curr_fc ,"<br>",
+                                           "<b>Periodo:</b>",curr_anio
+                                     )},
+                                 render.par=list(tween.frames = 10, show.time = F),
+                                 plot.par=list(mar=c(0,0,0,0)),
+                                 output.mode=param_out_mode )
+    
+    rend1 <- Sys.time()
+    print(rend1)
+    print(paste0("elapsed render:",rend1-rend0))
+    
+    ret_render
 }
 
 

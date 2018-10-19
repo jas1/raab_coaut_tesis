@@ -285,31 +285,10 @@ server <- function(input, output,session) {
         # input.input_static_network_click_vertex
         # input.input_static_network_click_edge
         
-        coautores <- str_split(input$input_static_network_click_edge,"--")
-        # glimpse(coautores)
-        # glimpse(coautores[[1]][1])
-        # glimpse(coautores[[1]][2])
-        # autor,articulo_id,autor_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores
-
-        listado_autores <- lista_vertices_autores(static_data_base())
-        current_autor_1 <- listado_autores %>% filter(aut_id==coautores[[1]][1]) %>% pull(autor)
-        current_autor_2 <- listado_autores %>% filter(aut_id==coautores[[1]][2]) %>% pull(autor)
+        input_edge <- input$input_static_network_click_edge
+        current_db <- static_data_base()
         
-        ret <- static_data_base() %>% 
-            filter(str_detect(autores,current_autor_1)) %>%
-            filter(str_detect(autores,current_autor_2)) %>%
-            select(autores,anio,titulo,url,cant_autores,fuerza_colaboracion) %>%
-            mutate(articulo=paste0("<p><a target='_blank' href='",url,"'>",titulo,"</a></p>")) %>% 
-            group_by(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% tally() %>% 
-            select(autores,anio,articulo,cant_autores,fuerza_colaboracion)
-        
-        # autores,articulo_id,autor_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion,autores
-        # glimpse(ret)
-        # descripciones_autores_df %>% 
-        #   filter(autor %in% input$click ) %>%
-        #   filter(periodo %in% input$anio )
-        # %>%
-        #   select(articulos,periodo)
+        ret <- get_art_asoc_from_click_edge(input_edge,current_db)
         ret
     })
     
@@ -1081,69 +1060,9 @@ server <- function(input, output,session) {
         
         current_test_tnet <- temporal_dinamico_acumulado_reactive()
         
-        # glimpse(current_test_tnet)
-        # .. ..$ na                        : logi FALSE
-        # .. ..$ vertex.names              : chr "a0058"
-        # .. ..$ active                    : num [1, 1:2] 1 18
-        # .. ..$ anio.active               :List of 2
-        # .. ..$ cant_autores.active       :List of 2
-        # .. ..$ fuerza_colaboracion.active:List of 2
-        # .. ..$ id.active                 :List of 2
-        # .. ..$ id_old.active             :List of 2
-        # .. ..$ label.active              :List of 2
-        # .. ..$ size.active               :List of 2
+        ret <- armar_render_ndtvd3_animacion(current_test_tnet)
         
-        rend0 <- Sys.time()
-        print(rend0)
-        
-        n_bins <- 3 # 5 : descartado x arcoiris
-        color_palette <- "Blues"#"YlGnBu" #"YlOrBr" # Spectral 
-        # render.d3movie(net, output.mode = 'htmlWidget')
-        ret_render <- render.d3movie(current_test_tnet, 
-                       usearrows = F, 
-                       displaylabels = F, 
-                       # label=function(slice){slice%v%'vertex.names'},
-                       label=function(slice){slice%v%'label'},
-                       
-                       bg="#ffffff", 
-                       #vertex.border="#FAFAFA",
-                       vertex.border="lightgrey",
-                       vertex.cex = 0.5,
-                       vertex.col = function(slice){
-                           ret  <-  '#BABABA' # default color
-                           current_slice_var <- (slice %v% "fuerza_colaboracion")
-                           if( !is.null(current_slice_var)){
-                               
-                               # zVar <- (current_slice_var - mean(current_slice_var)) / sd(current_slice_var)
-                               arma_bins <- cut_number(current_slice_var, n = n_bins)
-                               levels(arma_bins ) <- brewer.pal(n_bins, color_palette)
-                               
-                               ret <- as.character(arma_bins)
-                           }
-                           ret
-                       },
-                       edge.lwd = function(slice){ (slice %e% "fuerza_colaboracion") * 2 },
-                       edge.col = function(slice){slice %e% "color"},
-                       vertex.tooltip =  function(slice){
-                           # paste("<b>Autor:</b>", (slice %v% "vertex.names") , 
-                             paste("<b>Autor:</b>", (slice %v% "label") , 
-                                 "<br>",
-                                 "<b>Fuerza Colaboración:</b>",
-                                 (slice %v% "fuerza_colaboracion"))},
-                       edge.tooltip = function(slice){paste("<b>Autores:</b>", 
-                                                            (slice %e% "autores"), 
-                                                            "<br>",
-                                                            "<b>Fuerza Colaboración:</b>",
-                                                            (slice %e% "fuerza_colaboracion" ))},
-                       render.par=list(tween.frames = 10, show.time = F),
-                       plot.par=list(mar=c(0,0,0,0)),
-                       output.mode='htmlWidget' )
-        
-        rend1 <- Sys.time()
-        print(rend1)
-        print(paste0("elapsed render:",rend1-rend0))
-        
-        ret_render
+        ret
     })
     # temporal - dinamico - individual -----------------------------------------
     # agarrar el dinamico calculado , y sobre eso hacer las transformaciones de networkDynamic
@@ -1242,15 +1161,14 @@ server <- function(input, output,session) {
                                      edge.col = function(slice){slice %e% "color"},
                                      vertex.tooltip =  function(slice){
                                          # paste("<b>Autor:</b>", (slice %v% "vertex.names") , 
-                                         paste("<b>Autor:</b>", (slice %v% "label") , 
-                                               "<br>",
-                                               "<b>Fuerza Colaboración:</b>",
-                                               (slice %v% "fuerza_colaboracion"))},
-                                     edge.tooltip = function(slice){paste("<b>Autores:</b>", 
-                                                                          (slice %e% "autores"), 
-                                                                          "<br>",
-                                                                          "<b>Fuerza Colaboración:</b>",
-                                                                          (slice %e% "fuerza_colaboracion" ))},
+                                         paste("<b>Autor:</b>", (slice %v% "label") , "<br>",
+                                               "<b>Fuerza Colaboración:</b>",(slice %v% "fuerza_colaboracion"),"<br>",
+                                               "<b>Periodo:</b>",(slice %v% "anio")
+                                         )},
+                                     edge.tooltip = function(slice){paste("<b>Autores:</b>",(slice %e% "autores"), "<br>",
+                                                                          "<b>Fuerza Colaboración:</b>", (slice %e% "fuerza_colaboracion" ),"<br>",
+                                                                          "<b>Periodo:</b>",(slice %v% "anio")
+                                     )},
                                      render.par=list(tween.frames = 10, show.time = F),
                                      plot.par=list(mar=c(0,0,0,0)),
                                      output.mode='htmlWidget',

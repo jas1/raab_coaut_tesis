@@ -154,6 +154,96 @@ test_that(
 )
 
 
+testthat::test_that(
+    "grafo: generacion edges",{
+        
+        fuerza_colaboracion_relacion
+    
+        source(here:::here("funcs","funciones.r"),encoding = "UTF-8") # asi toma la ultima version
+        
+        # setup        
+        cota_seccion <- c("Trabajos Originales")
+        db_limpia <- "db_raab_grafos.sqlite"
+        cota_anio <-  c(1996:2016)
+        art_full <- articulos_todos_grafo(db_limpia,anios = cota_anio,secciones = cota_seccion)
+        gb_ok <- armado_grafo_bipartito(art_full)
+        
+        
+        
+        grafo_bipartito <- gb_ok
+        edgelist_para_grafo <- art_full 
+        g_projections <- igraph:::bipartite_projection(grafo_bipartito,multiplicity = TRUE)
+        
+        g_aut <- g_projections$proj2
+        # g_art <- g_projections$proj1
+        
+        # measure of collaboration strength illustrated in Fig. 5. Newman 2004 ; entonces el tamaño del nodo esta con que tan colaborativo fue
+        igraph:::V(g_aut)$size <- 10 + (igraph:::V(g_aut)$fuerza_colaboracion*10) # *10 para que aumente el tamaño , dejando de ser decimal
+        
+        # elist <- igraph:::as_edgelist(g_aut)
+        # igraph:::as_data_frame(g_aut,what="edges")
+        # glimpse(elist)
+        
+        lista_autores <- lista_vertices_autores(edgelist_para_grafo) %>% select(aut_id,autor)
+        
+        #data.frame(elist,stringsAsFactors = FALSE)
+        elist_df <- igraph:::as_data_frame(g_aut,what="edges") %>% as_tibble() %>% 
+            rename(autor1=from,autor2=to) %>% 
+            mutate(id=paste0(autor1,"--",autor2)) %>% 
+            left_join(lista_autores,by=c('autor1'='aut_id')) %>% 
+            rename(autor1_label=autor) %>% 
+            left_join(lista_autores,by=c('autor2'='aut_id')) %>% 
+            rename(autor2_label=autor) %>% 
+            mutate(autores=paste0(autor1_label,' - ',autor2_label))
+        
+        
+        # fuerza_colaboracion_relacion(elist_df %>% filter(str_detect(autor1_label,"Oyhenart") ,
+        #                                                  str_detect(autor2_label,"Pucciarelli")),
+        #                              edgelist_para_grafo)
+        
+        fuerza_colaboracion_y_anios_relacion(elist_df %>% filter(str_detect(autor1_label,"Oyhenart") ,
+                                                         str_detect(autor2_label,"Pucciarelli")),
+                                     edgelist_para_grafo)
+        
+        
+        # edge_analizar_ends <- elist_df %>% filter(str_detect(autor1_label,"Oyhenart") ,
+        #                                           str_detect(autor2_label,"Pucciarelli"))
+        # autor1_end <- edge_analizar_ends %>% pull(autor1_label)
+        # autor2_end <- edge_analizar_ends %>% pull(autor2_label)
+        # 
+        # filtro_1 <- edgelist_para_grafo %>% 
+        #     filter(str_detect(autores,autor1_end) & str_detect(autores,autor2_end))
+        # 
+        # fuerza_colab <- filtro_1 %>% 
+        #     count(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion, autores) %>%
+        #     count(fuerza_colaboracion) %>% 
+        #     summarise(fuerza_colaboracion_total = sum(fuerza_colaboracion)) %>% as.double()
+        # 
+        # 
+        # filtro_1 %>% 
+        #     count(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion, autores) %>% 
+        #     
+        #     count(fuerza_colaboracion)
+        # 
+        # filtro_1 %>% 
+        #     count(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion, autores) %>% 
+        #     summarise(fuerza_colaboracion_total = sum(fuerza_colaboracion)) %>% as.double()
+        # 
+        # filtro_1 %>% 
+        #     count(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion, autores) %>% 
+        #     select(titulo,anio,fuerza_colaboracion) %>% 
+        #     summarise(fuerza_colaboracion_total = sum(fuerza_colaboracion)) %>% as.double()
+        # 
+        # filtro_1 %>% 
+        #     count(articulo_id,url,titulo,anio,seccion,cant_autores,fuerza_colaboracion, autores) %>% 
+        #     select(titulo,anio,fuerza_colaboracion) %>% 
+        #     count(anio,fuerza_colaboracion) %>% 
+        #     summarise(fuerza_colaboracion_total = sum(fuerza_colaboracion)) %>% as.double()
+        # 
+        # fuerza_colab
+
+})
+
 
 test_that(
     "grafo: orden de vertices OK",
