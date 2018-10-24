@@ -1,0 +1,232 @@
+---
+title: "Analisis exploratorio RAAB"
+output:
+  html_document:
+    df_print: paged
+---
+
+Vemos las tablas que estan disponibles: 
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+# IMPORT LIBS ----------------------------------------------------------------------------
+library(here)#install.packages("here")
+source(here:::here("funcs","imports.r"),encoding = "UTF-8")
+# FUNCIONES -------------------------------------------------------------------
+source(here:::here("funcs","funciones.r"),encoding = "UTF-8")
+# SCRIPT -------------------------------------------------------------------
+db_name <- "db_raab_grafos.sqlite"
+raab_db_conn <- get_db_connection(db_name)
+nombres_tablas <- dbListTables(raab_db_conn)
+dbDisconnect(raab_db_conn)
+
+nombres_tablas
+```
+
+
+
+
+# para ver como estan compuestas las tablas
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+db_name <- "db_raab_grafos.sqlite"
+raab_db_conn <- get_db_connection(db_name)
+
+ skim_tablas <- map(nombres_tablas,function(x){
+    resultado <- dbGetQuery(raab_db_conn, paste0("select * from ", x )) %>% as_tibble()
+    # print(x)
+    skimr::skim(resultado)
+})
+
+dbDisconnect(raab_db_conn)
+names(skim_tablas) <- nombres_tablas
+skim_tablas
+
+```
+
+# para ver individualmente las tablas
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+
+db_name <- "db_raab_grafos.sqlite"
+raab_db_conn <- get_db_connection(db_name)
+
+autores <- dbGetQuery(raab_db_conn, paste0("select * from ", "autores" )) %>% as_tibble()
+articulos <- dbGetQuery(raab_db_conn, paste0("select * from ", "articulos" )) %>% as_tibble()
+autores_articulos <- dbGetQuery(raab_db_conn, paste0("select * from ", "autores_articulos" )) %>% as_tibble()
+ 
+dbDisconnect(raab_db_conn)
+
+
+```
+
+## autores
+
+la tabla de autores solo tiene los nombres de autor , que preguntas podemos hacer ?
+
+- Cuantos autores hay en total de la base ? 495
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+
+autores %>% glimpse()
+
+```
+
+
+## Artículos
+
+la tabla de Artículos tiene mas datos, los mas generales, podemos ver las secciones, ediciones y años.
+podemos ver algunas agregaciones en autores y autores_norm.
+que preguntas nos podemos hacer ?
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+
+articulos %>% glimpse()
+
+```
+
+### cuantos Artículos hay ? 
+
+`r nrow(articulos)`
+
+### cuantos años hay ?
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+articulos %>% 
+    mutate(anio = factor(anio)) %>% 
+    group_by(anio) %>% 
+    tally() %>% 
+    ggplot(aes(anio,n,fill=anio)) +
+    geom_col() +
+    labs(title="Artículos RAAB, obtenidos de la web ",
+         subtitle="# cantidad por año",
+         x="",
+         y="# cantidad por año")+
+    coord_flip() +  # rotate the boxplot as there is not clear 
+    theme_light()
+```
+
+podemos ver que el rango va desde 1996, de la 1ra edicion hasta el 2018.
+para analizar los 1ros 20 años de la revista vamosa limitarlo entre el 1996 y el 2016.
+observamos que no hubo ediciones todos los añps . faltando 2 para cumplir 1 edicion por año. 
+Los años faltantes son 1997 y 1998.
+
+en esta primera aproxiamcion tambien podemos ver que en el 2005 hay una produccion masiva, tal vez analizando secciones podamos tener respuestas.
+
+
+### cuantas secciones hay ?
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+articulos %>% 
+    mutate(anio = factor(anio)) %>% 
+    mutate(seccion = factor(seccion)) %>% 
+    group_by(anio,seccion) %>% 
+    tally() %>% 
+    ggplot(aes(anio,n,fill=seccion)) +
+    geom_col() +
+    labs(title="Artículos RAAB, obtenidos de la web ",
+         subtitle="# cantidad por año por seccion",
+         x="",
+         y="# cantidad por año")+
+    coord_flip() +  # rotate the boxplot as there is not clear 
+    theme_light()
+```
+
+Podemos ver que la seccion "Resumens de jornadas" es lo que hace que el 2005 resalte sobre los demas.
+Nos vamos a focalizar en la produccion de Trabajos originales.
+
+
+### cuantas ediciones hay ?
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+articulos %>% 
+    mutate(anio = factor(anio)) %>% 
+    mutate(seccion = factor(seccion)) %>% 
+    separate(codigo_edicion, into = c('ed_anio','ed_total','ed_issue'), sep = '_') %>% 
+    group_by(anio,ed_issue) %>% 
+    tally() %>% 
+    ggplot(aes(anio,n,fill=ed_issue)) +
+    geom_col() +
+    labs(title="Artículos RAAB, obtenidos de la web ",
+         subtitle="# cantidad por año por edicion",
+         x="",
+         y="# cantidad por año")+
+    coord_flip() +  # rotate the boxplot as there is not clear 
+    theme_light()
+```
+
+Observamos que existen años con mas de 1 edicion, teniendo como maximo 2 ediciones.
+vemos que el tipo de edicion generalmente son volumen 1 y volumen 2, salvo en el 2012 que uno se publico como especial
+vemos que en el 2005, en el volumen 1, estuvo relacionado con la ocurrencia de los "Resumens de jornadas"
+
+## autores_articulos
+
+proseguimos con buscar dentro de la tabla Autores Artículos
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+autores_articulos %>% glimpse()
+```
+
+esta tabla representa la relacion entre autores y Artículos. 
+por lo tanto se van a repetir Artículos y autores.
+
+
+Que preguntas nos podemos hacer ?
+
+### Que autores produjeron mas Artículos ?
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+autores_articulos %>% group_by(autor) %>% tally() %>% 
+    arrange(desc(n)) %>% 
+    mutate(autor=fct_reorder(autor,n)) %>% 
+    head(20) %>% 
+    ggplot(aes(autor,n,fill=autor)) + 
+    geom_col() +
+    labs(title="Artículos RAAB, obtenidos de la web ",
+         subtitle="# cantidad Artículos por autor",
+         x="",
+         y="# cantidad Artículos")+
+    coord_flip() +  # rotate the boxplot as there is not clear 
+    theme_light() +
+    theme(legend.position = "none")
+
+```
+### como es la distribucion de Artículos por autor
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+autores_articulos %>% group_by(autor) %>% tally() %>%
+    ggplot(aes(x=n)) +
+    geom_histogram() +
+    labs(title="Artículos RAAB, obtenidos de la web ",
+         subtitle="Frecuencia Artículos por autor",
+         x="cantidad Artículos",
+         y="autores con N Artículos")
+
+
+```
+
+### Que Artículos tienen mas autores asociados ?
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+autores_articulos %>% group_by(articulo_id) %>% tally() %>% 
+    arrange(desc(n)) %>% 
+    mutate(articulo_id=fct_reorder(articulo_id,n)) %>% 
+    head(20) %>% 
+    ggplot(aes(articulo_id,n,fill=articulo_id)) + 
+    geom_col() +
+    labs(title="Artículos RAAB, obtenidos de la web ",
+         subtitle="# cantidad autores por articulo",
+         x="",
+         y="# cantidad autores")+
+    coord_flip() +  # rotate the boxplot as there is not clear 
+    theme_light() +
+    theme(legend.position = "none")
+```
+
+### cual es la frecuencia de autores por articulo ?
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+autores_articulos %>% group_by(articulo_id) %>% tally() %>%
+    ggplot(aes(x=n)) +
+    geom_histogram()+
+    labs(title="Artículos RAAB, obtenidos de la web ",
+         subtitle="Frecuencia de autores por articulo",
+         x="cantidad autores",
+         y="Artículos con N autores")
+```
+
