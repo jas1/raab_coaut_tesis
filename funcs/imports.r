@@ -24,3 +24,8 @@ library(intergraph)#install.packages("intergraph")
 library(assertive)#install.packages("assertive")
 library(testthat)#install.packages("testthat")
 library(forcats)#install.packages("forcats")
+library(visdat)#install.packages("visdat")
+# https://github.com/timelyportfolio/RBioFabric/issues/1
+devtools::install_github("timelyportfolio/RBioFabric")
+library(RBioFabric)
+# devtools::install_github()RBioFabric_0.4

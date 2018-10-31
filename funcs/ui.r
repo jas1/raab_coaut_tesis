@@ -25,10 +25,24 @@ body <- dashboardBody(
     tabItems(
         # TAB CONSIDERACIONES --------------------------------------------------------------------------
         tabItem(tabName = "tab_consideraciones",
-                p("El análisis del estudio esta acotado a:"),
-                tags$ul(
-                    tags$li(" Tipo de publicación: TRABAJOS ORIGINALES"),
-                    tags$li(" Periodos comprendidos entre 1996 y 2016"))
+                tabsetPanel(type = "tabs",
+                            id="estatico_tabs",
+# --- UI : consideraciones: inicial  ------------------
+                            
+                            tabPanel("Generales", div(
+                                     p("El análisis del estudio esta acotado a:"),
+                                     tags$ul(
+                                         tags$li(" Tipo de publicación: TRABAJOS ORIGINALES"),
+                                         tags$li(" Periodos comprendidos entre 1996 y 2016"))
+                                     
+                                     )), # fin div de tab panel 
+                            tabPanel("Exploratorio datos", div(
+                                p("breve analisis del conjunto de datos"),
+                                p("breve analisis del conjunto de datos")
+                                )) # fin div de tab panel 
+                            )
+
+
         ),#fin tab_consideraciones 
         # TAB ESTATICO --------------------------------------------------------------------------
         tabItem(tabName = "tab_analisis_estatico",
@@ -92,47 +106,69 @@ body <- dashboardBody(
                         width = main_lay_width,
                         tabsetPanel(type = "tabs",
                                     id="estatico_tabs",
-                                    # --- UI : Panel principal : red  ------------------
+# --- UI : Panel principal : visualizacion  ------------------
                                     
-                                    tabPanel("Red de coautoría",
+                                    tabPanel("Visualización de coautoría",
                                              conditionalPanel('input.input_static_periodos != null',
-                                                              br(),
                                                               
-                                                              fluidRow(
-                                                                  column(9, 
-                                                                         conditionalPanel('input.input_static_periodos != null',
-                                                                                          fluidRow(
-                                                                                              column(4,
-                                                                                                     sliderInput("input_static_network_filter_edges_threshold", 
-                                                                                                                 "Filtro Visualizar aristas",
-                                                                                                                 min = 1, 
-                                                                                                                 max = network_filter_edges_threshold_max, # maximo segun filtros
-                                                                                                                 value = network_filter_edges_threshold_max,
-                                                                                                                 step=1,
-                                                                                                                 ticks=FALSE) # current filtro
-                                                                                                     # ) 
-                                                                                              ),
-                                                                                              column(6,
-                                                                                                     radioButtons("input_static_network_filter_edges_threshold_tipo", 
-                                                                                                                  "Tipo:",
-                                                                                                                  inline = TRUE,
-                                                                                                                  c("Todos"="todo",
-                                                                                                                    "Mayor igual A" = "mayorigual",
-                                                                                                                    "Menor igual A" = "menorigual",
-                                                                                                                    "Exacto" = "exacto"))
-                                                                                              )
-                                                                                          )
-                                                                                          
-                                                                                          
-                                                                         )), # fin col 9
-                                                                  column(3, 
-                                                                         downloadButton (outputId = "output_static_download_network",
-                                                                                         label = "Bajar red como html") )
-                                                              ),
-                                                              
-                                                              br(),
-                                                              visNetworkOutput("output_static_network")
-                                                              
+# --- UI : Panel principal : red  ------------------
+                                                              tabsetPanel(type = "tabs",
+                                                                          id="estatico_tabs_red", 
+                                                                          tabPanel("Red",
+                                                                          div(
+                                                                             br(),
+                                                                             
+                                                                             fluidRow(
+                                                                                 column(9, 
+                                                                                        conditionalPanel('input.input_static_periodos != null',
+                                                                                                         fluidRow(
+                                                                                                             column(4,
+                                                                                                                    sliderInput("input_static_network_filter_edges_threshold", 
+                                                                                                                                "Filtro Visualizar aristas",
+                                                                                                                                min = 1, 
+                                                                                                                                max = network_filter_edges_threshold_max, # maximo segun filtros
+                                                                                                                                value = network_filter_edges_threshold_max,
+                                                                                                                                step=1,
+                                                                                                                                ticks=FALSE) # current filtro
+                                                                                                                    # ) 
+                                                                                                             ),
+                                                                                                             column(6,
+                                                                                                                    radioButtons("input_static_network_filter_edges_threshold_tipo", 
+                                                                                                                                 "Tipo:",
+                                                                                                                                 inline = TRUE,
+                                                                                                                                 c("Todos"="todo",
+                                                                                                                                   "Mayor igual A" = "mayorigual",
+                                                                                                                                   "Menor igual A" = "menorigual",
+                                                                                                                                   "Exacto" = "exacto"))
+                                                                                                             )
+                                                                                                         )
+                                                                                                         
+                                                                                                         
+                                                                                        )), # fin col 9
+                                                                                 column(3, 
+                                                                                        downloadButton (outputId = "output_static_download_network",
+                                                                                                        label = "Bajar red como html") )
+                                                                             ), # fin fluid row
+                                                                             
+                                                                             br(),
+                                                                             visNetworkOutput("output_static_network")
+                                                                             ) # fin del div  de la red
+                                                                          ),# fin tab panel red
+# --- UI : Panel principal : biofabric  ------------------
+                                                                          tabPanel("Biofabric",div(
+                                                                              #p("agregar el panel de biofabric " ),
+                                                                                bioFabric_htmlwidgetOutput("output_biofabric_net",
+                                                                                                           width = "100%", 
+                                                                                                           height = "400px") 
+                                                                              )  # fin div biofabric
+                                                                              ),# fin tab panel biofabric
+# --- UI : Panel principal : heatmap  ------------------
+                                                                        tabPanel("Heatmap",div(
+                                                                            #p("agregar el panel de biofabric " ),
+                                                                            plotlyOutput('output_heatmap_net')
+                                                                        )  # fin div Heatmap net
+                                                                        )# fin tab Heatmap
+                                             )# fin tab panel vis de la red
                                              )# fin conditional panel pare mostrar la red
                                     ),# fin tab panel network statica
                                     # --- UI : Panel principal : Artículos Asociados  ------------------

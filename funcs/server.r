@@ -269,7 +269,43 @@ server <- function(input, output,session) {
         resultado <- range(ceiling(E(static_network_grafo_reactive())$width/static_edge_width_multiplier))
         resultado
     })
+# estatico 1: NETWORK: biofabric -----------------------------------------------------------------------------------------------
+    output$output_biofabric_net <- renderBioFabric_htmlwidget({
+        
+        withProgress(message = 'Generando biofabric ... ', value = 0, {
+            incProgress(1/2, detail = paste("Generando red ... ", 1))
+            grafo_reactive_tmp <- static_network_grafo_reactive()
+            incProgress(2/2, detail = paste("Generando visualización ... ", 2))
+            
+            grafo_names <- grafo_reactive_tmp
+            
+            V(grafo_names)$name <- V(grafo_names)$label
+            
+            bioFabric_htmlwidget(bioFabric(grafo_names),height = 500)
+        })
+        
+    })
     
+# estatico 1: NETWORK: heatmap -----------------------------------------------------------------------------------------------
+    output$output_heatmap_net <- renderPlotly({
+        withProgress(message = 'Generando heatmap ... ', value = 0, {
+            incProgress(1/2, detail = paste("Generando red ... ", 1))
+            grafo_reactive_tmp <- static_network_grafo_reactive()
+            incProgress(2/2, detail = paste("Generando visualización ... ", 2))
+            
+            grafo_names <- grafo_reactive_tmp
+            
+            plot_out <- armar_heatmap_ggplot_from_grafo(grafo_names)
+            
+            # V(grafo_names)$name <- V(grafo_names)$label
+            
+            # bioFabric_htmlwidget(bioFabric(grafo_names))
+            ggplotly(plot_out,height=500) 
+        })
+        
+        
+        
+    })
     
     
     # estatico 2: ARTICULOS -----------------------------------------------------------------------------------------------

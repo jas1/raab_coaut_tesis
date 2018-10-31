@@ -575,8 +575,11 @@ armar_heatmap_ggplot_from_grafo <- function(g, color_palette="Dark2"){
                                       fill=fuerza_colaboracion)) + 
         scale_colour_brewer(palette = color_palette) +
         geom_raster() + 
+        theme_light()+
         theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-        labs(x = "", y = "")
+        labs(x = "", 
+             y = "",
+             fill="fuerza colabroación")
         
     plot_out
 }
