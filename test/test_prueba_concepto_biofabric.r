@@ -4,8 +4,23 @@
 library(here)#install.packages("here")
 source(here:::here("funcs","imports.r"),encoding = "UTF-8")
 
+
+
 testthat::test_that(
-    "biofabric:ok",{
+    "biofabric:ok:prueba",{
+        source(here:::here("funcs","imports.r"),encoding = "UTF-8") # asi toma la ultima version
+        library(igraph)
+        library(igraphdata)
+        library(RBioFabric)
+        
+        data(Koenigsberg)
+        
+        bioFabric_htmlwidget( bioFabric( Koenigsberg ) )
+ 
+    })
+
+testthat::test_that(
+    "biofabric:ok:misdatos",{
         source(here:::here("funcs","imports.r"),encoding = "UTF-8") # asi toma la ultima version
 
         semilla <- 12345

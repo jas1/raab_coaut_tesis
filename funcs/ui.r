@@ -16,7 +16,9 @@ sidebar <- dashboardSidebar(
                  tabName = "tab_analisis_estatico"
         ),
         menuItem("Análisis Temporal",
-                 tabName = "tab_analisis_temporal")
+                 tabName = "tab_analisis_temporal"),
+        menuItem("Contacto @jspairani", 
+              href="https://twitter.com/jspairani" )
     )
 )
 

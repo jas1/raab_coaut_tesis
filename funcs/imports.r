@@ -26,6 +26,7 @@ library(testthat)#install.packages("testthat")
 library(forcats)#install.packages("forcats")
 library(visdat)#install.packages("visdat")
 # https://github.com/timelyportfolio/RBioFabric/issues/1
-devtools::install_github("timelyportfolio/RBioFabric")
+library(htmlwidgets)
+devtools::install_github("jas1/RBioFabric")
 library(RBioFabric)
 # devtools::install_github()RBioFabric_0.4
