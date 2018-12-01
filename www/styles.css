@@ -9,3 +9,7 @@
 #grado_0 {
     display:none;
 }
+
+code, pre { 
+    font-family: Fira Code, Iosevka, Hack, monospace; 
+} 

@@ -10,6 +10,7 @@ Vemos las tablas que estan disponibles:
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
 # IMPORT LIBS ----------------------------------------------------------------------------
 library(here)#install.packages("here")
+library(visdat)#install.packages("visdat")
 source(here:::here("funcs","imports.r"),encoding = "UTF-8")
 # FUNCIONES -------------------------------------------------------------------
 source(here:::here("funcs","funciones.r"),encoding = "UTF-8")
@@ -28,16 +29,26 @@ para ver como estan compuestas las tablas
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
 db_name <- "db_raab_grafos.sqlite"
 raab_db_conn <- get_db_connection(db_name)
-
- skim_tablas <- map(nombres_tablas,function(x){
+tables_data <- map(nombres_tablas,function(x){
     resultado <- dbGetQuery(raab_db_conn, paste0("select * from ", x )) %>% as_tibble()
-    # print(x)
-    skimr::skim(resultado)
+    
+    # DT::datatable(tables_data[[1]],
+    #           options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')))
+    # 
+    # DT::datatable(tables_data[[1]],
+    #           options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')))
+    resultado
 })
-
 dbDisconnect(raab_db_conn)
-names(skim_tablas) <- nombres_tablas
-skim_tablas
+# names(skim_tablas) <- nombres_tablas
+# skim_tablas
+
+visdat::vis_dat(tables_data[[1]])
+DT::datatable(tables_data[[1]],
+              options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')))
+visdat::vis_dat(tables_data[[2]])
+visdat::vis_dat(tables_data[[3]])
+
 
 ```
 
@@ -91,7 +102,9 @@ autores %>% glimpse()
 ## Artículos
 
 la tabla de Artículos tiene mas datos, los mas generales, podemos ver las secciones, ediciones y años.
+
 podemos ver algunas agregaciones en autores y autores_norm.
+
 que preguntas nos podemos hacer ?
 
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
@@ -117,12 +130,17 @@ articulos %>%
          x="",
          y="# cantidad por año")+
     coord_flip() +  # rotate the boxplot as there is not clear 
-    theme_light()
+    theme_light()+
+    theme(legend.position = "none")
 ```
 
+
 podemos ver que el rango va desde 1996, de la 1ra edicion hasta el 2018.
+
 para analizar los 1ros 20 años de la revista vamosa limitarlo entre el 1996 y el 2016.
-observamos que no hubo ediciones todos los añps . faltando 2 para cumplir 1 edicion por año. 
+
+observamos que no hubo ediciones todos los años . faltando 2 para cumplir 1 edicion por año. 
+
 Los años faltantes son 1997 y 1998.
 
 en esta primera aproxiamcion tambien podemos ver que en el 2005 hay una produccion masiva, tal vez analizando secciones podamos tener respuestas.
@@ -146,8 +164,8 @@ articulos %>%
 ```
 
 Podemos ver que la seccion "Resumens de jornadas" es lo que hace que el 2005 resalte sobre los demas.
-Nos vamos a focalizar en la produccion de Trabajos originales.
 
+Nos vamos a focalizar en la produccion de Trabajos originales.
 
 ### cuantas ediciones hay ?
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
@@ -168,7 +186,9 @@ articulos %>%
 ```
 
 Observamos que existen años con mas de 1 edicion, teniendo como maximo 2 ediciones.
+
 vemos que el tipo de edicion generalmente son volumen 1 y volumen 2, salvo en el 2012 que uno se publico como especial
+
 vemos que en el 2005, en el volumen 1, estuvo relacionado con la ocurrencia de los "Resumens de jornadas"
 
 ## autores_articulos
@@ -180,6 +200,7 @@ autores_articulos %>% glimpse()
 ```
 
 esta tabla representa la relacion entre autores y Artículos. 
+
 por lo tanto se van a repetir Artículos y autores.
 
 

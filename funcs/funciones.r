@@ -113,12 +113,27 @@ lista_vertices_autores <- function(data_acotado){
                   cant_autores_coautoria=sum(cant_autores)) %>%
         arrange(aut_id)
     
+    vertex_list_autores2 <- vertex_list_autores %>% 
+        mutate(anios2=str_split(anios,pattern = ";")) %>% 
+        unnest() %>% 
+        count(aut_id,autor,autor_id,anios,secciones,
+              fuerza_colaboracion_total,cant_autores_coautoria,anios2) %>% 
+        mutate(anios3=paste0(anios2,"[",n,"]")) %>% 
+        select(-anios2,-n) %>% 
+        group_by(aut_id,autor,autor_id,anios,secciones,
+                 fuerza_colaboracion_total,cant_autores_coautoria) %>% 
+        summarise(anios2=paste0(anios3,collapse = ";")) %>% 
+        ungroup() %>% #%>% select(anios2)
+        select( aut_id,autor,autor_id,anios2,secciones,
+                   fuerza_colaboracion_total,cant_autores_coautoria) %>% 
+        rename(anios=anios2)
+    
     # expected
-    if (nrow(vertex_list_autores) == 0 ) {
+    if (nrow(vertex_list_autores2) == 0 ) {
         warning("la lista de vertices autores esta vacia")
     }
     
-    vertex_list_autores
+    vertex_list_autores2
 }
 
 lista_vertices_articulos <- function(data_acotado){
@@ -712,7 +727,7 @@ estructura_grafo_para_DT <- function(estructura_grafo_df,dt_option_dom='ft'){
     resultado_DT
 }
 
-# metricas par anodos dado un grafo
+# metricas para nodos dado un grafo
 metricas_nodos_grafo <- function(grafo_reactive_tmp){
     grado_valor <- igraph:::degree(grafo_reactive_tmp) %>% data.frame()
     grado_valor$autor <- rownames(grado_valor)
@@ -748,6 +763,7 @@ metricas_nodos_grafo <- function(grafo_reactive_tmp){
     # nombre nodo
     nombres_nodos <- data.frame(nombre_autor=igraph:::V(grafo_reactive_tmp)$label,
                                 autor=igraph:::V(grafo_reactive_tmp)$name,
+                                fuerza_colaboracion=igraph:::V(grafo_reactive_tmp)$fuerza_colaboracion,
                                 stringsAsFactors = FALSE)
 
     estructura_red_df <- nombres_nodos %>% 
@@ -761,27 +777,34 @@ metricas_nodos_grafo <- function(grafo_reactive_tmp){
         rename(autor=nombre_autor) %>% 
         select(-id_autor)
     
+    # igraph::vertex_attr_names(grafo_reactive_tmp)
+    # V(grafo_reactive_tmp)$fuerza_colaboracion
+    
     estructura_red_df
 }
 
+
+# tmp <- generar_grafos_similares(grafo_reactive_tmp)
 # para generacion grafos similares
 generar_grafos_similares <- function(grafo_reactive_tmp,cantidad=1000) {
     cant_autores <- igraph:::gorder(grafo_reactive_tmp)
     densidad_red <- igraph:::edge_density(grafo_reactive_tmp)
     
-    lista_generados <- vector('list',cantidad)
+    # lista_generados <- vector('list',cantidad)
+    
+    lista_generados <- purrr::map(1:cantidad,~ igraph:::barabasi.game(n = cant_autores,directed = FALSE ))
     
     # 1000
-    for (i in 1:cantidad){
-        # ver ?erdos.renyi.game: gnp = probabilidad, gnm = M cantidad de edges
-        # lista_generados[[i]] <- erdos.renyi.game(
-        #     n=cant_autores,
-        #     p.or.m = densidad_red,
-        #     type = 'gnp',
-        #     directed=FALSE)
-        
-        lista_generados[[i]] <- igraph:::barabasi.game(n = cant_autores,directed = FALSE )
-    }
+    # for (i in 1:cantidad){
+    #     # ver ?erdos.renyi.game: gnp = probabilidad, gnm = M cantidad de edges
+    #     # lista_generados[[i]] <- erdos.renyi.game(
+    #     #     n=cant_autores,
+    #     #     p.or.m = densidad_red,
+    #     #     type = 'gnp',
+    #     #     directed=FALSE)
+    #     
+    #     lista_generados[[i]] <- igraph:::barabasi.game(n = cant_autores,directed = FALSE )
+    # }
     
     lista_generados
 }
@@ -905,10 +928,12 @@ grafo_para_periodo_x <- function(periodos,cota_seccion,db_limpia,static_edge_wid
     g_coaut
 }
 
-temporal_generar_grafos_acumulados <- function(global_periodos_disponibles,
-                                               cota_seccion,
-                                               db_limpia,
-                                               static_edge_width_multiplier){
+# devuelve un DF: periodo | lista periodos que incluye ese periodo
+# ej: disponibles = 1996, 1999, 2000 => 
+#    periodo= 1996  ;lista_periodos = 1996
+#    periodo= 1999  ;lista_periodos = 1996,1999
+#    periodo= 2000  ;lista_periodos = 1996,1999,2000
+armar_periodos_acumulados_segun_disponibles <- function(periodos_disponibles){
     tmp_anios_acum <- global_periodos_disponibles %>% as_tibble() 
     
     tmp_anios_acum <- tmp_anios_acum %>% rename(periodo = value)
@@ -916,6 +941,17 @@ temporal_generar_grafos_acumulados <- function(global_periodos_disponibles,
     tmp_anios_acum <- tmp_anios_acum %>% 
         mutate(periodos_lista = str_split(periodo_agrup,pattern = " ")) %>% 
         select(periodo,periodos_lista)
+    
+    tmp_anios_acum
+}
+
+
+temporal_generar_grafos_acumulados <- function(global_periodos_disponibles,
+                                               cota_seccion,
+                                               db_limpia,
+                                               static_edge_width_multiplier){
+    
+    tmp_anios_acum <- armar_periodos_acumulados_segun_disponibles(global_periodos_disponibles)
     
     tmp_anios_acum_2 <- map(tmp_anios_acum$periodos_lista, ~ grafo_para_periodo_x(.x,
                                                                                   cota_seccion,
@@ -976,8 +1012,8 @@ armar_render_ndtvd3_animacion <- function(current_test_tnet,
     print(rend0)
     # render.d3movie(net, output.mode = 'htmlWidget')
     ret_render <- render.d3movie(current_test_tnet, 
-                                 usearrows = F, 
-                                 displaylabels = F, 
+                                 usearrows = FALSE, 
+                                 displaylabels = FALSE, 
                                  # label=function(slice){slice%v%'vertex.names'},
                                  label=function(slice){slice%v%'label'},
                                  

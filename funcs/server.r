@@ -14,6 +14,13 @@ server <- function(input, output,session) {
         })
         dropdownMenu(type = "message", .list = messages)
     })
+
+    # generico - EDA autores --------------------------------------------------
+
+    callModule(eda_autores_server, "eda_autores",stringsAsFactors = FALSE)
+    callModule(eda_articulos_server, "eda_art",stringsAsFactors = FALSE)
+    callModule(eda_aut_art_server, "eda_aut_art",stringsAsFactors = FALSE)
+    
     
     # estatico -----------------------------------------------------------------------------------------------
     
@@ -559,7 +566,8 @@ server <- function(input, output,session) {
                    'Eigen Centrality' = eigen_centrality,
                    'Closeness' = closeness,
                    'Page Rank' = page_rank,
-                   '# Triangulos' = count_triangles)
+                   '# Triangulos' = count_triangles,
+                   'Fuerza Colaboración' = fuerza_colaboracion)
         
         estructura_red_df
     })
@@ -574,7 +582,8 @@ server <- function(input, output,session) {
             formatRound('Betweeness',4) %>%
             formatRound('Eigen Centrality',4) %>%
             formatRound('Closeness',7) %>%
-            formatRound('Page Rank',4)
+            formatRound('Page Rank',4) %>%
+            formatRound('Fuerza Colaboración',4) 
         
         dt_return
     })
@@ -644,9 +653,11 @@ server <- function(input, output,session) {
             
             plot_out <- ggplot(data=estructuras_grafos, 
                                aes(x= estructuras_grafos[[var_comparar]])) + 
+                theme_light()+
                 geom_histogram(bins = num_bins) + 
                 xlab(var_comparar) + ylab('Frecuencia') +
                 geom_vline(xintercept = estructura_grafo_activo[[var_comparar]], colour='red')
+                
             
             
             incProgress(4/4, detail = paste("Fin simulación ... ", 4))
@@ -887,11 +898,12 @@ server <- function(input, output,session) {
     temporal_basico_grafos_reactive <- reactive({
         # temporal_grafos_reactive_acum()
         # antes: input$anio, ahora: anios disponibles dataset
-        global_periodos_disponibles
-        listado_grafos <- map(global_periodos_disponibles, ~ grafo_para_periodo_x(.x,
-                                                                                  cota_seccion,
-                                                                                  db_limpia,
-                                                                                  static_edge_width_multiplier)) 
+        # global_periodos_disponibles
+        # listado_grafos <- map(global_periodos_disponibles, ~ grafo_para_periodo_x(.x,
+        #                                                                           cota_seccion,
+        #                                                                           db_limpia,
+        #                                                                           static_edge_width_multiplier)) 
+        listado_grafos <- temporal_basico_grafos
         
         # semilla=input$temporal_semilla_seed
         listado_grafos
@@ -913,35 +925,60 @@ server <- function(input, output,session) {
             grafos <- temporal_basico_grafos_reactive()
             incProgress(indice/n, detail = paste("Calculando medidas ...", indice)) # 2
             indice <- indice+1
-            calculo_grafos <- map(grafos,calcular_estructura_sobre_grafo)
-            names(calculo_grafos) <- global_periodos_disponibles
-            incProgress(indice/n, detail = paste("Armando estructura ...", indice)) # 3
-            indice <- indice+1
-            estr_grafos <- dplyr::bind_rows(calculo_grafos, .id = 'names') %>% rename(periodo=names)  
+            # calculo_grafos <- map(grafos,calcular_estructura_sobre_grafo)
+            # names(calculo_grafos) <- global_periodos_disponibles
+            # incProgress(indice/n, detail = paste("Armando estructura ...", indice)) # 3
+            # indice <- indice+1
+            # estr_grafos <- dplyr::bind_rows(calculo_grafos, .id = 'names') %>% rename(periodo=names)  
+            # 
+            # grafo_estr_as_stack <- estr_grafos %>% 
+            #     select(periodo,input$temporal_sel_vars) %>%
+            #     gather(key=metrica,value='valor',-periodo) %>%
+            #     left_join(temporal_estructuras_reactive_vars_tibble(),by=c("metrica"="value")) %>%
+            #     mutate(plot_text=paste0('Período: ',periodo,'<br />',
+            #                             'Métrica: ',nombre,'<br />',
+            #                             'Valor: ',valor)) %>%
+            #     rename(Periodo = periodo, 'Métrica' = nombre , Valor = valor )
+            # 
             
-            grafo_estr_as_stack <- estr_grafos %>% 
-                select(periodo,input$temporal_sel_vars) %>%
-                gather(key=metrica,value='valor',-periodo) %>%
-                left_join(temporal_estructuras_reactive_vars_tibble(),by=c("metrica"="value")) %>%
-                mutate(plot_text=paste0('Período: ',periodo,'<br />',
-                                        'Métrica: ',nombre,'<br />',
-                                        'Valor: ',valor)) %>%
-                rename(Periodo = periodo, 'Métrica' = nombre , Valor = valor )
+            # stack_filtrado <- temporal_basico_grafo_estr_as_stack %>% 
+            #     filter(metrica %in% input$temporal_sel_vars) %>%
+            #     rename(Periodo = periodo, 
+            #            'Métrica' = metrica , 
+            #            Valor = valor )
+            
             # glimpse(grafo_estr_as_stack)
             incProgress(indice/n, detail = paste("Procesando visualización ...", indice)) # 4
             indice <- indice+1
             
-            plot_out <- grafo_estr_as_stack %>% 
-                ggplot(aes(x=Periodo,y=Valor,color=Métrica,group=Métrica,text=plot_text)) +
+            plot_out <- temporal_basico_grafo_estr_as_stack %>% 
+                filter(metrica %in% input$temporal_sel_vars) %>%
+                rename(Periodo = periodo, 
+                       'Métrica' = metrica , 
+                       Valor = valor ) %>% 
+                ggplot(aes(x=Periodo,
+                           y=Valor,
+                           color=Métrica,
+                           group=Métrica,
+                           text=plot_text)) +
                 geom_point() + 
-                geom_line() + 
-                theme(axis.text.x = element_text(angle = 90, hjust = 1))
+                geom_line() +
+                theme_light()+
+                theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+                labs(x="")
         })
         
         # config(ggplotly(plot_out,tooltip="text"), locale="es")
         ggplotly(plot_out,tooltip="text")
     })
     
+    output$download_temporal_basico_estruct <- downloadHandler( 
+        filename = paste('temp_simple_-', Sys.Date(),'-', '.csv', sep=''), content = function(file) {
+            #temporal_acumulado_estr_grafos
+            #temporal_basico_estr_grafos
+                    write.csv(temporal_basico_estr_grafos, file,row.names = FALSE)
+    })
+
     # temporal - acumulado -------------------------------------------------------
     observe({
         # req(input$anio)
@@ -951,12 +988,22 @@ server <- function(input, output,session) {
     })
     
     temporal_grafos_acum_reactive <- reactive({
-
-        tmp_anios_acum_2 <- temporal_generar_grafos_acumulados(global_periodos_disponibles,
-                                                               cota_seccion,
-                                                               db_limpia,
-                                                               static_edge_width_multiplier)
+# 
+#         tmp_anios_acum_2 <- temporal_generar_grafos_acumulados(global_periodos_disponibles,
+#                                                                cota_seccion,
+#                                                                db_limpia,
+#                                                                static_edge_width_multiplier)
+        
+        tmp_anios_acum_2 <- temporal_acumulado_grafos
+        
         tmp_anios_acum_2
+    })
+    
+    output$download_temporal_acumulado_estruct <- downloadHandler( 
+        filename = paste('temp_acumulado_-', Sys.Date(),'-', '.csv', sep=''), content = function(file) {
+            #temporal_acumulado_estr_grafos
+            #temporal_basico_estr_grafos
+            write.csv(temporal_acumulado_estr_grafos, file,row.names = FALSE)
     })
     
     # temporal - acumulado - output ----------------------------------------------
@@ -970,40 +1017,43 @@ server <- function(input, output,session) {
             indice <- 1
             incProgress(indice/n, detail = paste("Armando grafos ...", indice)) #1 
             indice <- indice+1
-            grafos <- temporal_grafos_acum_reactive()
-            incProgress(indice/n, detail = paste("Calculando medidas ...", indice)) # 2
-            indice <- indice+1
-            calculo_grafos <- map(grafos,calcular_estructura_sobre_grafo)
-            names(calculo_grafos) <- global_periodos_disponibles
-            incProgress(indice/n, detail = paste("Armando estructura ...", indice)) # 3
-            indice <- indice+1
-            estr_grafos <- dplyr::bind_rows(calculo_grafos, .id = 'names') %>% rename(periodo=names)  
-            # glimpse(estr_grafos)
-            
-            grafo_estr_as_stack <- estr_grafos %>% 
-                select(periodo,input$temporal_sel_vars_2) %>%
-                gather(key=metrica,value='valor',-periodo) %>%
-                left_join(temporal_estructuras_reactive_vars_tibble(),by=c("metrica"="value")) %>%
-                mutate(plot_text=paste0('Período: ',periodo,'<br />',
-                                        'Métrica: ',nombre,'<br />',
-                                        'Valor: ',valor)) %>%
-                rename(Periodo = periodo, 'Métrica' = nombre , Valor = valor )
-            # glimpse(grafo_estr_as_stack)
+            # grafos <- temporal_grafos_acum_reactive()
+            # incProgress(indice/n, detail = paste("Calculando medidas ...", indice)) # 2
+            # indice <- indice+1
+            # calculo_grafos <- map(grafos,calcular_estructura_sobre_grafo)
+            # names(calculo_grafos) <- global_periodos_disponibles
+            # incProgress(indice/n, detail = paste("Armando estructura ...", indice)) # 3
+            # indice <- indice+1
+            # estr_grafos <- dplyr::bind_rows(calculo_grafos, .id = 'names') %>% rename(periodo=names)  
+            # # glimpse(estr_grafos)
+            # 
+            # grafo_estr_as_stack <- estr_grafos %>% 
+            #     select(periodo,input$temporal_sel_vars_2) %>%
+            #     gather(key=metrica,value='valor',-periodo) %>%
+            #     left_join(temporal_estructuras_reactive_vars_tibble(),by=c("metrica"="value")) %>%
+            #     mutate(plot_text=paste0('Período: ',periodo,'<br />',
+            #                             'Métrica: ',nombre,'<br />',
+            #                             'Valor: ',valor)) %>%
+            #     rename(Periodo = periodo, 'Métrica' = nombre , Valor = valor )
+            # # glimpse(grafo_estr_as_stack)
             incProgress(indice/n, detail = paste("Procesando visualización ...", indice)) # 4
             indice <- indice+1
             
-            plot_out <- grafo_estr_as_stack %>% 
+            plot_out <- temporal_acumulado_grafo_estr_as_stack %>% 
+                filter(metrica %in% input$temporal_sel_vars_2) %>%
+                rename(Periodo = periodo, 'Métrica' = metrica , Valor = valor ) %>% 
                 ggplot(aes(x=Periodo,y=Valor,color=Métrica,group=Métrica,text=plot_text)) +
                 geom_point() + 
                 geom_line() + 
-                theme(axis.text.x = element_text(angle = 90, hjust = 1))
+                theme_light()+
+                theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+                labs(x="")
         })
         plotly_out <- ggplotly(plot_out,tooltip="text")
         
         # config(plotly_out, locale="es")
         ggplotly(plot_out,tooltip="text")
     })
-    
     
     # temporal - top N - acumulados --------------------------------------------
     
@@ -1018,11 +1068,20 @@ server <- function(input, output,session) {
     
     temporal_grafos_top_n_acum_metricas_reactive <- reactive({
         
-        grafos <- temporal_grafos_acum_reactive()
-        calculo_grafos <- map(grafos,metricas_nodos_grafo)
-        names(calculo_grafos) <- global_periodos_disponibles
+        # grafos <- temporal_grafos_acum_reactive()
+        # calculo_grafos <- map(grafos,metricas_nodos_grafo)
+        # names(calculo_grafos) <- global_periodos_disponibles
+        # calculo_grafos
         
-        calculo_grafos
+        temporal_acumulado_nodos_grafos
+        
+    })
+    
+    output$download_temporal_grafos_top_n <- downloadHandler( 
+        filename = paste('temp_grafos_top_n_-', Sys.Date(),'-', '.csv', sep=''), content = function(file) {
+            #temporal_acumulado_estr_grafos
+            #temporal_basico_estr_grafos
+            write.csv(temporal_grafos_top_n_acum_metricas_reactive(), file,row.names = FALSE)
     })
     
     
@@ -1039,10 +1098,10 @@ server <- function(input, output,session) {
             grafos <- temporal_grafos_acum_reactive()
             incProgress(indice/n, detail = paste("Calculando medidas ...", indice)) # 2
             indice <- indice+1
-            calculo_grafos <- temporal_grafos_top_n_acum_metricas_reactive()
+            # calculo_grafos <- temporal_grafos_top_n_acum_metricas_reactive()
             incProgress(indice/n, detail = paste("Armando estructura ...", indice)) # 3
             indice <- indice+1
-            estr_grafos <- dplyr::bind_rows(calculo_grafos, .id = 'names') %>% rename(periodo=names)
+            # estr_grafos <- dplyr::bind_rows(calculo_grafos, .id = 'names') %>% rename(periodo=names)
             # glimpse(estr_grafos)
             
             # para_top_5 <- estr_grafos %>% gather(metrica,valor,-periodo,-autor)
@@ -1052,7 +1111,8 @@ server <- function(input, output,session) {
             var_selected <- input$temporal_sel_vars_3
             # glimpse(var_selected)
             
-            estr_grafos_2 <- estr_grafos %>% select(autor,periodo,var_selected) %>%
+            estr_grafos_2 <- temporal_grafos_top_n_acum_metricas_reactive() %>% 
+                select(autor,periodo,var_selected) %>%
                 gather(Métrica,Valor,-autor,-periodo)
             # glimpse(estr_grafos_2)
             
@@ -1070,35 +1130,43 @@ server <- function(input, output,session) {
                                              color=Valor)) +
                 geom_point() + 
                 xlab("Periodo") + ylab("Autor")+
-                scale_colour_gradient(low = "#a6bddb", high = "#034e7b") + 
+                # scale_colour_gradient(low = "#a6bddb", high = "#034e7b") +
+                scale_colour_gradient(low = "#d9edf7", high = "#2c7fb8") + 
+                theme_light()+
                 theme(axis.text.x = element_text(angle = 90, hjust = 1),
-                      axis.text.y = element_text(size = 6))
+                      axis.text.y = element_text(size = 6))+
+                labs(x="",y="")
             
         })
         
         
-        ggplotly(plot_out)
+        plotly::ggplotly(plot_out)
     })
     
     # temporal - dinamico - acumulado -----------------------------------------
     # agarrar el dinamico calculado , y sobre eso hacer las transformaciones de networkDynamic
     
     temporal_acumulado_network_pkg_reactive<- reactive({
-        nets <- generar_nets_from_igraph(temporal_grafos_acum_reactive())
+        # nets <- generar_nets_from_igraph(temporal_grafos_acum_reactive())
+        temporal_acumulado_network_pkg
     })
     
     temporal_dinamico_acumulado_reactive <- reactive({ 
-        tnet_time <- generar_dyn_net_from_nets(temporal_acumulado_network_pkg_reactive())
-        tnet_time
+        # tnet_time <- generar_dyn_net_from_nets(temporal_acumulado_network_pkg_reactive())
+        # tnet_time
+        temporal_dinamico_acumulado
     })
     
     output$temporal_dinamico_acumulado <- ndtv:::renderNdtvAnimationWidget({
         
-        current_test_tnet <- temporal_dinamico_acumulado_reactive()
+        # current_test_tnet <- temporal_dinamico_acumulado_reactive()
         
-        ret <- armar_render_ndtvd3_animacion(current_test_tnet)
+        # ret <- armar_render_ndtvd3_animacion(current_test_tnet)
         
-        ret
+        # ret
+        withProgress(message = 'Armando visualización ...', value = 0, {
+            temporal_dinamico_acumulado_anim
+        })
     })
     # temporal - dinamico - individual -----------------------------------------
     # agarrar el dinamico calculado , y sobre eso hacer las transformaciones de networkDynamic

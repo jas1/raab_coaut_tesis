@@ -28,7 +28,7 @@ body <- dashboardBody(
         # TAB CONSIDERACIONES --------------------------------------------------------------------------
         tabItem(tabName = "tab_consideraciones",
                 tabsetPanel(type = "tabs",
-                            id="estatico_tabs",
+                            id="tab_consideraciones_tabs",
 # --- UI : consideraciones: inicial  ------------------
                             
                             tabPanel("Generales", div(
@@ -38,12 +38,27 @@ body <- dashboardBody(
                                          tags$li(" Periodos comprendidos entre 1996 y 2016"))
                                      
                                      )), # fin div de tab panel 
-                            tabPanel("Exploratorio datos", div(
-                                p("breve analisis del conjunto de datos"),
-                                p("breve analisis del conjunto de datos")
-                                )) # fin div de tab panel 
-                            )
-
+                            tabPanel("Exploratorio datos", 
+                                     br(),
+                                tabsetPanel(type = "tabs",id="tabs-eda",
+                                    tabPanel("Autores", div(
+                                        br(),
+                                        eda_autores_ui("eda_autores")
+                                        )# fin div de tab panel
+                                    ), # fin tab panel
+                                    tabPanel("Artículos", div(
+                                        br(),
+                                        eda_articulos_ui("eda_art")
+                                        )# fin div de tab panel
+                                    ), # fin tab panel
+                                    tabPanel("Autores-Artículos", div(
+                                        br(),
+                                        eda_aut_art_ui("eda_aut_art")
+                                    )# fin div de tab panel
+                                    ) # fin tab panel
+                                ) # fin div de tabset panel
+                            )# fin exploratorio datos
+            ) # tab_consideraciones_tabs
 
         ),#fin tab_consideraciones 
         # TAB ESTATICO --------------------------------------------------------------------------
@@ -373,7 +388,8 @@ body <- dashboardBody(
                     bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
                     
                     # temporal - basico -------------------------------------------------
-                
+                # download_temporal_acumulado_estruct
+                # download_temporal_basico_estruct
                 
                 bs_append(title = "Métricas de Red en el tiempo por año", 
                           content = div(
@@ -394,6 +410,9 @@ body <- dashboardBody(
                                   ), 
                                   multiple = TRUE
                               ),
+                              downloadButton (outputId = "download_temporal_basico_estruct",
+                                              label = "Bajar est. red. temporal"),
+                              
                               # actionButton('temporal_estructura_refrescar_boton', 'Ver'),
                               
                               
@@ -424,6 +443,8 @@ body <- dashboardBody(
                             ), 
                             multiple = TRUE
                         ),
+                        downloadButton (outputId = "download_temporal_acumulado_estruct",
+                                        label = "Bajar est. red. temporal - acumulado"),
                         # actionButton('temporal_estructura_refrescar_boton', 'Ver'),
                         
                         
@@ -439,7 +460,7 @@ body <- dashboardBody(
                     bs_append(title = "Métricas de Nodos, principales N en el tiempo, valores acumulados", 
                               content = div(
                                   fluidRow(
-                                      column(6,
+                                      column(3,
                                              pickerInput(
                                                  inputId = "temporal_sel_vars_3", 
                                                  label = "Variables",
@@ -457,8 +478,14 @@ body <- dashboardBody(
                                                  ), 
                                                  multiple = FALSE
                                              )),
+                                      column(3,
+                                             sliderInput("top_n_periodos", label = p("Principales N"), value = 5,min = 1,max = 10)
+                                             ),
                                       column(6,
-                                             sliderInput("top_n_periodos", label = p("Principales N"), value = 5,min = 1,max = 10))
+                                             downloadButton (outputId = "download_temporal_grafos_top_n",
+                                                             label = "Bajar est. nodos red. temporal - acumulado")
+
+                                      )
                                       # actionButton('temporal_estructura_refrescar_boton', 'Ver'),
                                   ),
                                   fluidRow(

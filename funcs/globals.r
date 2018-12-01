@@ -1,6 +1,7 @@
 #globals
 
 # GLOBALS ---------------------------------------------------------------------
+# theme_light()
 
 # cota temporal segun tesis
 cota_anio <-  c(1996:2016)
@@ -14,6 +15,17 @@ db_limpia <- paste0("db_raab_grafos.sqlite")
 # esta variable es glboal dado q ue no puede cambiarse porque es cota de la tesis
 # se analiza entre 1996 y 2016 y solo la seccion trabajos originales.
 global_periodos_disponibles <- obtener_periodos_disponibles(db_limpia,min(cota_anio), max(cota_anio),cota_seccion)
+
+# cacheadas para optimizar funcionamiento
+# temporal basico: 
+# temporal_basico_grafos: grafos para cada periodo sin acumular
+# temporal_basico_estr_grafos: calculos de estructura de temporal_basico_grafos para cada periodo sin acumular
+# temporal_basico_grafo_estr_as_stack: punto de vista stacked de temporal_basico_estr_grafos 
+base::load(here::here("data","temporal_basico_data.Rdata"))
+base::load(here::here("data","temporal_acumulado_data.Rdata"))
+base::load(here::here("data","temporal_acumulado_dyn_data.Rdata"))
+
+#
 
 # DEFINICION LISTADO ALGORITMOS DISPOSICION RED ----------------------------------------
 layouts_disponibles_df <- data.frame(stringsAsFactors = FALSE,
@@ -95,54 +107,55 @@ names(comunidades_algos_disponibles_list) <- comunidades_algos_disponibles_df %>
 # DEFINICION VARS ESTRUCTURA DE RED ----------------------------------------
 
 estructura_red_vars_compara_simu_DF <- data.frame(stringsAsFactors = FALSE,
-                                                  var_name=c(# 'Cant. Aut.' = cantidad_autores, # no tiene sentido comparar por igual estructura
-                                                      # 'Cant. Art.' = cantidad_papers, # no tiene sentido comparar por igual estructura
-                                                      # 'Cant. Contrib.' = cantidad_contribuciones, # Cant. Aut. por Art. sumados.
-                                                      'cant_relaciones', # para ver cuantas relaciones se generaron
-                                                      # 'Cant. Media de Art. por Autor' = cantidad_paper_por_autor_avg, 
-                                                      # 'Cant. Media de Aut. por Art.' = cantidad_autores_por_paper_avg,
+                                                  var_name=c(
+                                                      'cantidad_autores',# 'Cant. Aut.', = cantidad_autores, # no tiene sentido comparar por igual estructura
+                                                      'cantidad_papers',#'Cant. Art.' = cantidad_papers, # no tiene sentido comparar por igual estructura
+                                                      'cantidad_contribuciones',#'Cant. Contrib.' = cantidad_contribuciones, # Cant. Aut. por Art. sumados.
+                                                      'cant_relaciones',#'Cant. Rel.' = cant_relaciones,#'cant_relaciones', # para ver cuantas relaciones se generaron
+                                                      'cantidad_paper_por_autor_avg',#'Cant. Media de Art. por Autor' = cantidad_paper_por_autor_avg,
+                                                      'cantidad_autores_por_paper_avg',#'Cant. Media de Aut. por Art.' = cantidad_autores_por_paper_avg,
                                                       'componentes_cantidad', # Cant. de subgrafos conectados
                                                       'componentes_largest_porc', # ratio en porcentaje de Aut. del componente mas grande / Aut. total del grafo
                                                       'componentes_largest', # mayor subgrafo conectado
                                                       'densidad_red',
                                                       'distancia_media',
                                                       'num_dist_lejanos',
-                                                      # 'Cant. de Cliques' = num_cliques,
-                                                      # 'Cant. Aut. Clique mas grande' = num_largest_cliques,
+                                                      'num_cliques',#'Cant. de Cliques' = num_cliques,
+                                                      'num_largest_cliques',#'Cant. Aut. Clique mas grande' = num_largest_cliques,
                                                       'porc_largest_cliques', # ratio en porcentaje del clique mas grande / Aut. total del grafo
                                                       'num_transitivity',
                                                       'num_assort_degree'),
-                                                  EN=c(# 'Cant. Aut.' = cantidad_autores, # no tiene sentido comparar por igual estructura
-                                                      # 'Cant. Art.' = cantidad_papers, # no tiene sentido comparar por igual estructura
-                                                      # 'Cant. Contrib.' = cantidad_contribuciones, # Cant. Aut. por Art. sumados.
-                                                      '# Rel.', # para ver cuantas relaciones se generaron
-                                                      # 'Cant. Media de Art. por Autor' = cantidad_paper_por_autor_avg, 
-                                                      # 'Cant. Media de Aut. por Art.' = cantidad_autores_por_paper_avg,
+                                                  EN=c( '# Aut.' ,#= cantidad_autores, # no tiene sentido comparar por igual estructura
+                                                        '# Art.' ,#= cantidad_papers, # no tiene sentido comparar por igual estructura
+                                                        '# Contrib.',# = cantidad_contribuciones, # Cant. Aut. por Art. sumados.
+                                                        '# Rel.', # para ver cuantas relaciones se generaron
+                                                        '# Avg. Art. / Aut.',# 'Cant. Media de Art. por Autor' = cantidad_paper_por_autor_avg, 
+                                                        '# Avg. Aut. / Art.',# 'Cant. Media de Aut. por Art.' = cantidad_autores_por_paper_avg,
                                                       '# Components', # Cant. de subgrafos conectados
                                                       'Larger Component (%)', # ratio en porcentaje de Aut. del componente mas grande / Aut. total del grafo
                                                       '# Aut. in Larger Component', # mayor subgrafo conectado
                                                       'Density',
                                                       'Avg. Distance',
                                                       'Diameter',
-                                                      # 'Cant. de Cliques' = num_cliques,
-                                                      # 'Cant. Aut. Clique mas grande' = num_largest_cliques,
+                                                      '# Cliques',# 'Cant. de Cliques' = num_cliques,
+                                                      '# Aut. in larger Cliqué',# 'Cant. Aut. Clique mas grande' = num_largest_cliques,
                                                       'Larger Cliqué(%)', # ratio en porcentaje del clique mas grande / Aut. total del grafo
                                                       'Tran.',
                                                       'Asort.'),
-                                                  ES=c(# 'Cant. Aut.' = cantidad_autores, # no tiene sentido comparar por igual estructura
-                                                      # 'Cant. Art.' = cantidad_papers, # no tiene sentido comparar por igual estructura
-                                                      # 'Cant. Contrib.' = cantidad_contribuciones, # Cant. Aut. por Art. sumados.
-                                                      '# Rel.', # para ver cuantas relaciones se generaron
-                                                      # 'Cant. Media de Art. por Autor' = cantidad_paper_por_autor_avg, 
-                                                      # 'Cant. Media de Aut. por Art.' = cantidad_autores_por_paper_avg,
+                                                  ES=c('# Aut.',# = cantidad_autores, # no tiene sentido comparar por igual estructura
+                                                       '# Art.',# = cantidad_papers, # no tiene sentido comparar por igual estructura
+                                                       '# Contrib.',# = cantidad_contribuciones, # Cant. Aut. por Art. sumados.
+                                                       '# Rel.', # para ver cuantas relaciones se generaron
+                                                       '# Media Art. / Aut.',# 'Cant. Media de Art. por Autor' = cantidad_paper_por_autor_avg, 
+                                                       '# Media Aut. / Art.',# 'Cant. Media de Aut. por Art.' = cantidad_autores_por_paper_avg,
                                                       '# de Componentes', # Cant. de subgrafos conectados
                                                       'Componente más Grande (%)', # ratio en porcentaje de Aut. del componente mas grande / Aut. total del grafo
                                                       '# Aut. en Componente mas Grande', # mayor subgrafo conectado
                                                       'Densidad',
                                                       'Distancia Media',
                                                       'Diametro',
-                                                      # 'Cant. de Cliques' = num_cliques,
-                                                      # 'Cant. Aut. Clique mas grande' = num_largest_cliques,
+                                                      '# Cliques',# 'Cant. de Cliques' = num_cliques,
+                                                      '# Aut. en Cliqué más grande',# 'Cant. Aut. Clique mas grande' = num_largest_cliques,
                                                       'Cliqué más grande (%)', # ratio en porcentaje del clique mas grande / Aut. total del grafo
                                                       'Tran.',
                                                       'Asort.')) %>% 
@@ -155,19 +168,22 @@ names(estructura_red_vars_compara_simu_list) <- estructura_red_vars_compara_simu
 # DEFINICION VARS ESTRUCTURA DE RED - NODOS ----------------------------------------
 
 estructura_red_nodos_vars_compara_simu_DF <- data.frame(stringsAsFactors = FALSE,
-                                                        var_name=c('degree',
+                                                        var_name=c('fuerza_colaboracion',
+                                                                   'degree',
                                                                    'betweeness',
                                                                    'eigen_centrality',
                                                                    'closeness',
                                                                    'page_rank',
                                                                    'count_triangles'),
-                                                        EN=c('Degree',
+                                                        EN=c('Collaboration Strenght',
+                                                             'Degree',
                                                              'Betweeness',
                                                              'Eigen Centrality',
                                                              'Closeness',
                                                              'Page Rank',
                                                              'Count Triangles'),
-                                                        ES=c('Grado',
+                                                        ES=c('Fuerza Colaboración',
+                                                            'Grado',
                                                              'Intermediación',
                                                              'Autovector',
                                                              'Cercanía',
