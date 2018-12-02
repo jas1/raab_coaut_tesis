@@ -32,28 +32,37 @@ body <- dashboardBody(
 # --- UI : consideraciones: inicial  ------------------
                             
                             tabPanel("Generales", div(
+                                     br(),
                                      p("El análisis del estudio esta acotado a:"),
                                      tags$ul(
                                          tags$li(" Tipo de publicación: TRABAJOS ORIGINALES"),
                                          tags$li(" Periodos comprendidos entre 1996 y 2016"))
                                      
                                      )), # fin div de tab panel 
-                            tabPanel("Exploratorio datos", 
+# --- UI : consideraciones: EDA  ------------------
+                            tabPanel("Análisis Exploratorio datos", 
                                      br(),
+                                     checkboxInput("eda_acotado_2016", 
+                                                   label = "Análisis Exploratorio acotado a Periodos: 1996 a 2016 y Sección: Trabajos originales",
+                                                   value = TRUE),
+                                     
                                 tabsetPanel(type = "tabs",id="tabs-eda",
                                     tabPanel("Autores", div(
                                         br(),
-                                        eda_autores_ui("eda_autores")
+                                        eda_autores_ui("eda_autores",
+                                                       acotar_anios_secciones='input.eda_acotado_2016')
                                         )# fin div de tab panel
                                     ), # fin tab panel
                                     tabPanel("Artículos", div(
                                         br(),
-                                        eda_articulos_ui("eda_art")
+                                        eda_articulos_ui("eda_art")#,
+                                                         # acotar_anios_secciones='input.eda_acotado_2016')
                                         )# fin div de tab panel
                                     ), # fin tab panel
                                     tabPanel("Autores-Artículos", div(
                                         br(),
-                                        eda_aut_art_ui("eda_aut_art")
+                                        eda_aut_art_ui("eda_aut_art")#,
+                                                       #acotar_anios_secciones='input.eda_acotado_2016')
                                     )# fin div de tab panel
                                     ) # fin tab panel
                                 ) # fin div de tabset panel
@@ -268,10 +277,10 @@ body <- dashboardBody(
                                                                   br(),
                                                                   DT::dataTableOutput('output_static_estructura_red_DT')
                                                               )) %>%
-                                                                  bs_set_opts(panel_type = "info") %>%
                                                                   
-                                                                  # metricas nodos ----------------------------------------------------------
-                                                              
+                                                                  
+# metricas nodos ----------------------------------------------------------
+                                                              bs_set_opts(panel_type = "info") %>%
                                                               bs_append(title = "Métricas de Nodos", content = div(
                                                                   
                                                                   br(),
@@ -282,22 +291,33 @@ body <- dashboardBody(
                                                                   DT::dataTableOutput('output_static_estructura_nodos_table')
                                                               )# fin div
                                                               ) %>%
-                                                                  bs_set_opts(panel_type = "info") %>%
+
+# detalles componentes ----------------------------------------------------
+
+bs_set_opts(panel_type = "info") %>%
+    bs_append(title = "Detalle de Componentes", content = div(
+        # similar a lode comunidades, pero por componentes
+        # listado de componetes y su estructura
+        # listado de autores por componente
+        # autores + estructura componente + articulos asociados componente
+        # visualizacion del componente seleccionado.
+    )) %>% 
                                                                   
-                                                                  # simulacion similares ----------------------------------------------------
-                                                              
-                                                              bs_append(title = "Comparación con Grafos similares", 
-                                                                        content = div( p('comparación contra 1000 grafos random con estructura similar'), 
-                                                                                       selectizeInput(inputId = "input_static_simulacion_sel_variable", label = "Variable", choices = '',
-                                                                                                      options = list(
-                                                                                                          placeholder = 'Seleccionar Variable',
-                                                                                                          onInitialize = I('function() { this.setValue(""); }')),
-                                                                                                      multiple = FALSE),
-                                                                                       # actionButton('compara_estructura_boton', 'Simular'),
-                                                                                       conditionalPanel('input.input_static_simulacion_sel_variable != null && input.input_static_simulacion_sel_variable!= "" ',
-                                                                                                        plotlyOutput('output_static_estructura_red_simulacion_comparativa')
-                                                                                       )
-                                                                        ))
+# simulacion similares ----------------------------------------------------
+                                                              bs_set_opts(panel_type = "info") %>%
+                                                              bs_append(title = "Analisis de Mundo pequeño y Libre Escala", 
+                                                                        content = div( 
+                                                                            # p('comparación contra 1000 grafos random con estructura similar'), 
+                                                                            # selectizeInput(inputId = "input_static_simulacion_sel_variable", label = "Variable", choices = '',
+                                                                            #                           options = list(
+                                                                            #                               placeholder = 'Seleccionar Variable',
+                                                                            #                               onInitialize = I('function() { this.setValue(""); }')),
+                                                                            #                           multiple = FALSE),
+                                                                            # conditionalPanel('input.input_static_simulacion_sel_variable != null && input.input_static_simulacion_sel_variable!= "" ',
+                                                                            #                  plotlyOutput('output_static_estructura_red_simulacion_comparativa')
+                                                                            #            )# fin conditional panel de selected variable
+                                                                        )# fin div de mundo pequeño append
+                                                                        )# fin bs_append de mundo pequeño 
                                              ),
                                              conditionalPanel('input.input_static_periodos == null',
                                                               "Para ver la estructura, debe seleccionar al menos un Período.")

@@ -17,9 +17,24 @@ server <- function(input, output,session) {
 
     # generico - EDA autores --------------------------------------------------
 
-    callModule(eda_autores_server, "eda_autores",stringsAsFactors = FALSE)
-    callModule(eda_articulos_server, "eda_art",stringsAsFactors = FALSE)
-    callModule(eda_aut_art_server, "eda_aut_art",stringsAsFactors = FALSE)
+    # va dentdo de osberve event, por el checkbox
+    # de esta forma checkeado o no checkeado te muestra las cosas.
+    
+    observeEvent(input$eda_acotado_2016,{
+        tmp <- input$eda_acotado_2016
+        # print(paste0("observeEvent_2016:", tmp))
+        callModule(eda_autores_server, "eda_autores",
+                   stringsAsFactors = FALSE,
+                   acotar_anios_secciones=tmp)
+        
+        callModule(eda_articulos_server, "eda_art",
+                   stringsAsFactors = FALSE,
+                   acotar_anios_secciones=tmp)
+        callModule(eda_aut_art_server, "eda_aut_art",
+                   stringsAsFactors = FALSE,
+                   acotar_anios_secciones=tmp)
+        
+    })
     
     
     # estatico -----------------------------------------------------------------------------------------------

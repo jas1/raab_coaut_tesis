@@ -264,6 +264,7 @@ autores_articulos %>% group_by(articulo_id) %>% tally() %>%
     labs(title="Artículos RAAB, obtenidos de la web ",
          subtitle="Frecuencia de autores por articulo",
          x="cantidad autores",
-         y="Artículos con N autores")
+         y="Artículos con N autores")+
+    theme_light()
 ```
 

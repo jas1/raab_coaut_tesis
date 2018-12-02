@@ -19,7 +19,7 @@
 
 
 # ui modulo autores ---------------------------------------------------------------
-eda_autores_ui <- function(id, label = "Análisis Exploratorio de Datos de Autores") {
+eda_autores_ui <- function(id,acotar_anios_secciones=FALSE, label = "Análisis Exploratorio de Datos de Autores") {
     # Create a namespace function using the provided id
     ns <- NS(id)
     
@@ -48,16 +48,30 @@ eda_autores_ui <- function(id, label = "Análisis Exploratorio de Datos de Autor
     )# fin taglist
 }
 # server modulo autores ---------------------------------------------------------------
-eda_autores_server <- function(input, output, session, stringsAsFactors) {
+eda_autores_server <- function(input, output, session, stringsAsFactors,acotar_anios_secciones=FALSE) {
     
     autores_reactive <- reactive({
         db_name <- "db_raab_grafos.sqlite"
         raab_db_conn <- get_db_connection(db_name)
         # nombres_tablas <- dbListTables(raab_db_conn)
         autores <-  dbGetQuery(raab_db_conn, paste0("select * from ", "autores" )) %>% as_tibble()
+        # print(paste0("autores raw: ",nrow(autores)))
+        
+        # print(paste0("acotar value: ",acotar_anios_secciones))
+        if (acotar_anios_secciones==TRUE) {
+            autores_articulos_raw <- dbGetQuery(raab_db_conn, paste0("select * from ", "autores_articulos" )) %>% as_tibble()
+            autores_articulos <- autores_articulos_raw %>% 
+                filter(anio %in% cota_anio) %>% 
+                filter(seccion %in% cota_seccion) 
+            
+            autores <- autores_articulos %>% select(autor) %>% unique() %>% left_join(autores)
+            # print(paste0("autores filter: ",nrow(autores)))
+            # articulos <- autores_articulos %>% select(articulo_id) %>% unique() %>% left_join(articulos_raw)
+        }
+
         dbDisconnect(raab_db_conn)
         # glimpse(autores)
-        autores
+        autores %>% select(id,autor)
     })
     
     output$eda_download_autores <- downloadHandler( 
@@ -119,24 +133,46 @@ eda_articulos_ui <- function(id, label = "Análisis Exploratorio de Datos de Art
                         verbatimTextOutput(ns('eda_resumen'))
                     )),
                     tabPanel("Preguntas",div(
-                        tags$h6("Cuantos autores hay en total de la base ?"),
+                        tags$h6("Cuantos artículos hay en total de la base ?"),
                         br(),
-                        uiOutput(ns('eda_total'))
+                        uiOutput(ns('eda_total')),
+                        br(),
+                        ### cuantos articulos por años hay ?
+                        plotlyOutput(ns('eda_articulos_anio')),
+                        br(),
+                        ### cuantas secciones hay ? no tiene sentido si no incluyo las otras secciones.
+                        plotlyOutput(ns('eda_articulos_anio_seccion')),
+                        br(),
+                        ### cuantas ediciones hay ?
+                        plotlyOutput(ns('eda_articulos_anio_edicion'))
                     ))
         )# fin tabset
     )# fin taglist
 }
 # server modulo articulos ---------------------------------------------------------------
-eda_articulos_server <- function(input, output, session, stringsAsFactors) {
+eda_articulos_server <- function(input, output, session, stringsAsFactors,acotar_anios_secciones=FALSE) {
     
     data_reactive <- reactive({
         db_name <- "db_raab_grafos.sqlite"
         raab_db_conn <- get_db_connection(db_name)
         # nombres_tablas <- dbListTables(raab_db_conn)
-        autores <-  dbGetQuery(raab_db_conn, paste0("select * from ", "articulos" )) %>% as_tibble()
+        articulos <-  dbGetQuery(raab_db_conn, paste0("select * from ", "articulos" )) %>% as_tibble()
+        
+        # print(paste0("acotar value: ",acotar_anios_secciones))
+        if (acotar_anios_secciones==TRUE) {
+            autores_articulos_raw <- dbGetQuery(raab_db_conn, paste0("select * from ", "autores_articulos" )) %>% as_tibble()
+            autores_articulos <- autores_articulos_raw %>% 
+                filter(anio %in% cota_anio) %>% 
+                filter(seccion %in% cota_seccion) 
+            
+            # autores <- autores_articulos %>% select(autor) %>% unique() %>% left_join(autores)
+            # print(paste0("autores filter: ",nrow(autores)))
+            articulos <- autores_articulos %>% select(articulo_id) %>% unique() %>% left_join(articulos)
+        }
+        
         dbDisconnect(raab_db_conn)
         # glimpse(autores)
-        autores
+        articulos
     })
     
     output$eda_download <- downloadHandler( 
@@ -175,6 +211,62 @@ eda_articulos_server <- function(input, output, session, stringsAsFactors) {
         p(nrow(data_reactive()))
     })
     
+    output$eda_articulos_anio <- renderPlotly({
+       pl <-  data_reactive() %>% 
+            mutate(anio = factor(anio)) %>% 
+            group_by(anio) %>% 
+            tally() %>% 
+            ggplot(aes(anio,n,fill=anio)) +
+            geom_col() +
+            labs(title="Cantidad de artículos por año ",
+                 subtitle="Artículos RAAB, obtenidos de la web",
+                 x="",
+                 y="# cantidad de articulos")+
+            coord_flip() +  # rotate the boxplot as there is not clear 
+            theme_light()+
+            theme(legend.position = "none")
+       # pl
+       ggplotly(pl)
+    })
+    
+    output$eda_articulos_anio_seccion <- renderPlotly({
+       pl <-  data_reactive() %>% 
+            mutate(anio = factor(anio)) %>% 
+            mutate(seccion = factor(seccion)) %>% 
+            group_by(anio,seccion) %>% 
+            tally() %>% 
+            ggplot(aes(anio,n,fill=seccion)) +
+            geom_col() +
+            labs(title="Cantidad de artículos por año por sección",
+                 subtitle="Artículos RAAB, obtenidos de la web",
+                 x="",
+                 y="# cantidad por año",
+                 fill="sección")+
+            coord_flip() +  # rotate the boxplot as there is not clear 
+            theme_light()
+       # pl
+       ggplotly(pl)
+    })
+    
+    output$eda_articulos_anio_edicion <- renderPlotly({
+        pl <- data_reactive() %>% 
+            mutate(anio = factor(anio)) %>% 
+            mutate(seccion = factor(seccion)) %>% 
+            separate(codigo_edicion, into = c('ed_anio','ed_total','ed_issue'), sep = '_') %>% 
+            group_by(anio,ed_issue) %>% 
+            tally() %>% 
+            ggplot(aes(anio,n,fill=ed_issue)) +
+            geom_col() +
+            labs(title="Cantidad de artículos por año por edición",
+                 subtitle="Artículos RAAB, obtenidos de la web",
+                 x="",
+                 y="# cantidad por año",
+                 fill="edición")+
+            coord_flip() +  # rotate the boxplot as there is not clear 
+            theme_light()
+        # pl
+        ggplotly(pl)
+    })
 }
 # ui modulo aut-art ---------------------------------------------------------------
 eda_aut_art_ui <- function(id, label = "Análisis Exploratorio de Datos de Autores-Artículos") {
@@ -198,24 +290,46 @@ eda_aut_art_ui <- function(id, label = "Análisis Exploratorio de Datos de Autor
                         verbatimTextOutput(ns('eda_resumen'))
                     )),
                     tabPanel("Preguntas",div(
-                        tags$h6("Cuantos autores hay en total de la base ?"),
+                        tags$h6("Cuantas autorías hay en total de la base ?"),
+                        p("autoría es cada vez que un autor participa de un paper."),
                         br(),
-                        uiOutput(ns('eda_total'))
+                        uiOutput(ns('eda_total')),
+                        br(),
+                        ### Que autores produjeron mas Artículos ?
+                        plotlyOutput(ns('eda_produccion_articulos')),
+                        br(),
+                        ### como es la distribucion de Artículos por autor
+                        plotlyOutput(ns('eda_articulos_por_autor')),
+                        br(),
+                        ### Que Artículos tienen mas autores asociados ?
+                        plotlyOutput(ns('eda_articulos_con_mas_autores')),
+                        br(),
+                        ### cual es la frecuencia de autores por articulo ?
+                        plotlyOutput(ns('eda_autores_por_articulo'))
+
                     ))
         )# fin tabset
     )# fin taglist
 }
 # server modulo aut-art ---------------------------------------------------------------
-eda_aut_art_server <- function(input, output, session, stringsAsFactors) {
+eda_aut_art_server <- function(input, output, session, stringsAsFactors,acotar_anios_secciones=FALSE) {
     
     data_reactive <- reactive({
         db_name <- "db_raab_grafos.sqlite"
         raab_db_conn <- get_db_connection(db_name)
         # nombres_tablas <- dbListTables(raab_db_conn)
-        autores <-  dbGetQuery(raab_db_conn, paste0("select * from ", "autores_articulos" )) %>% as_tibble()
+        autores_articulos <-  dbGetQuery(raab_db_conn, paste0("select * from ", "autores_articulos" )) %>% as_tibble()
+        
+        # print(paste0("acotar value: ",acotar_anios_secciones))
+        if (acotar_anios_secciones==TRUE) {
+            autores_articulos <- autores_articulos %>% 
+                filter(anio %in% cota_anio) %>% 
+                filter(seccion %in% cota_seccion) 
+        }
+        
         dbDisconnect(raab_db_conn)
         # glimpse(autores)
-        autores
+        autores_articulos
     })
     
     output$eda_download <- downloadHandler( 
@@ -254,4 +368,66 @@ eda_aut_art_server <- function(input, output, session, stringsAsFactors) {
         p(nrow(data_reactive()))
     })
     
+    # ### Que autores produjeron mas Artículos ? eda_produccion_articulos
+    output$eda_produccion_articulos <- renderPlotly({
+        pl <- data_reactive() %>% group_by(autor) %>% tally() %>% 
+            arrange(desc(n)) %>% 
+            mutate(autor=fct_reorder(autor,n)) %>% 
+            head(20) %>% 
+            ggplot(aes(autor,n,fill=autor)) + 
+            geom_col() +
+            labs(subtitle="Artículos RAAB, obtenidos de la web ",
+                 title="Top 20 autores con mas artículos", # Cantidad Artículos por autor, top 20
+                 x="",
+                 y="# cantidad Artículos")+
+            coord_flip() +  # rotate the boxplot as there is not clear 
+            theme_light() +
+            theme(legend.position = "none")
+        # pl
+        ggplotly(pl)
+    })
+    # ### como es la distribucion de Artículos por autor eda_articulos_por_autor
+    output$eda_articulos_por_autor <- renderPlotly({
+        pl <- data_reactive() %>% group_by(autor) %>% tally() %>%
+            ggplot(aes(x=n)) +
+            geom_histogram(bins=25) +
+            theme_light() +
+            labs(subtitle="Artículos RAAB, obtenidos de la web ",
+                 title="Frecuencia Artículos por autor",
+                 x="cantidad Artículos",
+                 y="autores con N Artículos")
+        # pl
+        ggplotly(pl)
+    })
+    # ### Que Artículos tienen mas autores asociados ? eda_articulos_con_mas_autores
+    output$eda_articulos_con_mas_autores <- renderPlotly({
+       pl <-  data_reactive() %>% group_by(articulo_id) %>% tally() %>% 
+            arrange(desc(n)) %>% 
+            mutate(articulo_id=fct_reorder(articulo_id,n)) %>% 
+            head(20) %>% 
+            ggplot(aes(articulo_id,n,fill=articulo_id)) + 
+            geom_col() +
+            labs(subtitle="Artículos RAAB, obtenidos de la web ",
+                 title="Top 20 artículos con mas autores.",# Cantidad de autores por artículo, top 20.
+                 x="",
+                 y="# cantidad autores")+
+            coord_flip() +  # rotate the boxplot as there is not clear 
+            theme_light() +
+            theme(legend.position = "none")
+       # pl
+       ggplotly(pl)
+    })
+    # ### cual es la frecuencia de autores por articulo ? eda_autores_por_articulo
+    output$eda_autores_por_articulo <- renderPlotly({
+        pl <- data_reactive() %>% group_by(articulo_id) %>% tally() %>%
+            ggplot(aes(x=n)) +
+            geom_histogram(bins = 25)+
+            theme_light() +
+            labs(subtitle="Artículos RAAB, obtenidos de la web ",
+                 title="Frecuencia de autores por artículo",
+                 x="# autores",
+                 y="Artículos con N autores")
+        ggplotly(pl)
+        #pl
+    })
 }
