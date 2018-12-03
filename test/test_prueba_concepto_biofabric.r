@@ -9,9 +9,7 @@ source(here:::here("funcs","imports.r"),encoding = "UTF-8")
 testthat::test_that(
     "biofabric:ok:prueba",{
         source(here:::here("funcs","imports.r"),encoding = "UTF-8") # asi toma la ultima version
-        library(igraph)
-        library(igraphdata)
-        library(RBioFabric)
+        #igraph,igraphdata,RBioFabric
         
         data(Koenigsberg)
         

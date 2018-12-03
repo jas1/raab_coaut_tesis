@@ -23,11 +23,18 @@ library(ndtv)#install.packages("ndtv")
 library(intergraph)#install.packages("intergraph")
 library(assertive)#install.packages("assertive")
 library(testthat)#install.packages("testthat")
+library(igraphdata)#install.packages("igraphdata")
 library(forcats)#install.packages("forcats")
 library(visdat)#install.packages("visdat")
+
 library(skimr)#install.packages("skimr")
 # https://github.com/timelyportfolio/RBioFabric/issues/1
-library(htmlwidgets)
+
+library(Rcpp)#install.packages("Rcpp")
+library(devtools)#install.packages("devtools")
+
+library(htmlwidgets)#install.packages("htmlwidgets")
+
 devtools::install_github("jas1/RBioFabric")
 library(RBioFabric)
 # devtools::install_github()RBioFabric_0.4

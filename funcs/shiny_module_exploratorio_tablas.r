@@ -92,9 +92,9 @@ eda_autores_server <- function(input, output, session, stringsAsFactors,acotar_a
     output$eda_autores_compo_plot <- renderPlot({
         withProgress(message = 'Armando visualización ...', value = 0, {
             plot_vis_compo <- visdat::vis_dat(autores_reactive())
-            # incProgress(1/2, detail = paste("Procesando visualización interactiva ...", 1)) # 
+            incProgress(1/2, detail = paste("Procesando visualización interactiva ...", 1)) #
             # plty_out <- plotly::ggplotly(plot_vis_compo)
-            # incProgress(2/2, detail = paste("Finalizando visualización interactiva ...", 2)) # 
+            incProgress(2/2, detail = paste("Finalizando visualización interactiva ...", 2)) #
             # plty_out
         })
         plot_vis_compo
@@ -193,9 +193,9 @@ eda_articulos_server <- function(input, output, session, stringsAsFactors,acotar
     output$eda_compo_plot <- renderPlot({
         withProgress(message = 'Armando visualización ...', value = 0, {
             plot_vis_compo <- visdat::vis_dat(data_reactive())
-            # incProgress(1/2, detail = paste("Procesando visualización interactiva ...", 1)) # 
+            incProgress(1/2, detail = paste("Procesando visualización interactiva ...", 1)) #
             # plty_out <- plotly::ggplotly(plot_vis_compo)
-            # incProgress(2/2, detail = paste("Finalizando visualización interactiva ...", 2)) # 
+            incProgress(2/2, detail = paste("Finalizando visualización interactiva ...", 2)) #
             # plty_out
         })
         plot_vis_compo
@@ -350,9 +350,9 @@ eda_aut_art_server <- function(input, output, session, stringsAsFactors,acotar_a
     output$eda_compo_plot <- renderPlot({
         withProgress(message = 'Armando visualización ...', value = 0, {
             plot_vis_compo <- visdat::vis_dat(data_reactive())
-            # incProgress(1/2, detail = paste("Procesando visualización interactiva ...", 1)) # 
+            incProgress(1/2, detail = paste("Procesando visualización interactiva ...", 1)) #
             # plty_out <- plotly::ggplotly(plot_vis_compo)
-            # incProgress(2/2, detail = paste("Finalizando visualización interactiva ...", 2)) # 
+            incProgress(2/2, detail = paste("Finalizando visualización interactiva ...", 2)) #
             # plty_out
         })
         plot_vis_compo
