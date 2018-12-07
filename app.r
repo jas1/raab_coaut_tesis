@@ -14,7 +14,10 @@ source(here:::here("funcs","globals.r"),encoding = "UTF-8")
 
 # SHINY: MODULOS  -------------------------------------------------------------
 
+# EDA 
 source(here:::here("funcs","shiny_module_exploratorio_tablas.r"),encoding = "UTF-8")
+# componentes
+source(here:::here("funcs","shiny_module_subgrafos.r"),encoding = "UTF-8")
 
 # SHINY: UI -------------------------------------------------------------------
 

@@ -569,7 +569,7 @@ server <- function(input, output,session) {
             write.csv(estructura_red_reactive(), file,row.names = FALSE)
         })
     
-    # estructura de nodos
+# estructura de nodos  -----------------------------------------------------------------------------------------------
     estructura_nodos_grafo_reactive <- reactive({
         grafo_reactive_tmp <- static_network_grafo_reactive()
         
@@ -615,6 +615,18 @@ server <- function(input, output,session) {
         filename = paste('est_nodos-', Sys.Date(), '.csv', sep=''), content = function(file) {
             write.csv(estructura_nodos_grafo_reactive(), file,row.names = FALSE)
         })
+
+# estructura - COMPONENTES ------------------------------------------------
+    observeEvent(input$input_static_periodos,{
+
+    callModule(subgrafos_server, "estr_componentes",
+               static_network_grafo_reactive(), # parametros del componente: grafo
+               static_data_base() # parametros del componente: base articulos
+               )
+    })
+
+    
+# estructura - SIMULACION -------------------------------------------------
     
     # # var comparar simulacion
     # estructura_red_vars_compara_simu_reactive <- reactive({
@@ -632,7 +644,11 @@ server <- function(input, output,session) {
         grafo_reactive_tmp <- static_network_grafo_reactive()
         generar_grafos_similares(grafo_reactive_tmp,1000)
     })
+   
     
+    
+
+ 
     output$output_static_estructura_red_simulacion_comparativa <- renderPlotly({ 
         # para comparar la red con 1000 redes con similares caracteristicas.
         # para ver que tan en la media cae la nuestra.

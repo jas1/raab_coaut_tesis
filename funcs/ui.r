@@ -301,6 +301,9 @@ bs_set_opts(panel_type = "info") %>%
         # listado de autores por componente
         # autores + estructura componente + articulos asociados componente
         # visualizacion del componente seleccionado.
+        subgrafos_ui("estr_componentes")
+        
+        
     )) %>% 
                                                                   
 # simulacion similares ----------------------------------------------------
@@ -379,7 +382,7 @@ bs_set_opts(panel_type = "info") %>%
                                                                                                  ) # fin div detalle comunidad  
                                                                                 )# fin conditional comunidad seleccionada
                                                                             )
-                                                              )# fin detalle comunidad seleccionada. 
+                                                              )# fin bs_append detalle comunidad seleccionada. 
                                              ),# fin comunidades ok.
                                              conditionalPanel('input.comunidades_sel_algo == null || input.comunidades_sel_algo== "" ',
                                                               div(

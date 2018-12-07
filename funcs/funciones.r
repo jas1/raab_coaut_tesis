@@ -7,7 +7,7 @@
 
 get_db_connection <- function(db_name){
 
-    data_file <- here:::here("data",db_name )
+    data_file <- here::here("data",db_name )
 
     # pre logic    
     assertive.files::assert_all_are_existing_files(data_file)
@@ -159,14 +159,14 @@ lista_vertices_articulos <- function(data_acotado){
 transformar_en_bipartito <- function(g_aut_art,data_acotado){
     
     # pre logic
-    stopifnot(igraph:::is.igraph(g_aut_art))
+    stopifnot(igraph::is.igraph(g_aut_art))
     assertive::assert_is_data.frame(data_acotado)
 
     # logic
-    igraph:::V(g_aut_art)$type <- igraph:::V(g_aut_art)$name %in% (data_acotado %>% pull(aut_id) )
+    igraph::V(g_aut_art)$type <- igraph::V(g_aut_art)$name %in% (data_acotado %>% pull(aut_id) )
     
     # expected result
-    stopifnot(igraph:::is.bipartite(g_aut_art))
+    stopifnot(igraph::is.bipartite(g_aut_art))
     
     g_aut_art
 }
@@ -196,33 +196,33 @@ ordenear_lista_articulos_by_vertex_attr <- function(art_name_list,vertex_list_ar
 agregar_propiedades_a_bipartito <- function(g_aut_art,data_acotado){
     
     # pre logic
-    stopifnot(igraph:::is.igraph(g_aut_art))
+    stopifnot(igraph::is.igraph(g_aut_art))
     assertive::assert_is_data.frame(data_acotado)
     
     # logic
     
     vertex_list_autores <- lista_vertices_autores(data_acotado)
     vertex_list_articulos_old <- lista_vertices_articulos(data_acotado)
-    vertex_articulos_names <- igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$name
+    vertex_articulos_names <- igraph::V(g_aut_art)[!igraph::V(g_aut_art)$type]$name
     vertex_list_articulos <- ordenear_lista_articulos_by_vertex_attr(vertex_articulos_names,vertex_list_articulos_old)
 
-    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$id <- vertex_list_autores$aut_id
-    igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$id <- vertex_list_articulos$art_id
+    igraph::V(g_aut_art)[igraph::V(g_aut_art)$type]$id <- vertex_list_autores$aut_id
+    igraph::V(g_aut_art)[!igraph::V(g_aut_art)$type]$id <- vertex_list_articulos$art_id
         
-    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$id_old <- vertex_list_autores$autor_id
-    igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$id_old <- vertex_list_articulos$articulo_id
+    igraph::V(g_aut_art)[igraph::V(g_aut_art)$type]$id_old <- vertex_list_autores$autor_id
+    igraph::V(g_aut_art)[!igraph::V(g_aut_art)$type]$id_old <- vertex_list_articulos$articulo_id
     
-    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$label <- vertex_list_autores$autor
-    igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$label <- vertex_list_articulos$articulo_id
+    igraph::V(g_aut_art)[igraph::V(g_aut_art)$type]$label <- vertex_list_autores$autor
+    igraph::V(g_aut_art)[!igraph::V(g_aut_art)$type]$label <- vertex_list_articulos$articulo_id
     
-    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$anio <- vertex_list_autores$anios
-    igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$anio <- vertex_list_articulos$anio
+    igraph::V(g_aut_art)[igraph::V(g_aut_art)$type]$anio <- vertex_list_autores$anios
+    igraph::V(g_aut_art)[!igraph::V(g_aut_art)$type]$anio <- vertex_list_articulos$anio
     
-    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$fuerza_colaboracion <- vertex_list_autores$fuerza_colaboracion_total
-    igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$fuerza_colaboracion <- vertex_list_articulos$fuerza_colaboracion
+    igraph::V(g_aut_art)[igraph::V(g_aut_art)$type]$fuerza_colaboracion <- vertex_list_autores$fuerza_colaboracion_total
+    igraph::V(g_aut_art)[!igraph::V(g_aut_art)$type]$fuerza_colaboracion <- vertex_list_articulos$fuerza_colaboracion
     
-    igraph:::V(g_aut_art)[igraph:::V(g_aut_art)$type]$cant_autores <- vertex_list_autores$cant_autores_coautoria
-    igraph:::V(g_aut_art)[!igraph:::V(g_aut_art)$type]$cant_autores <- vertex_list_articulos$cant_autores
+    igraph::V(g_aut_art)[igraph::V(g_aut_art)$type]$cant_autores <- vertex_list_autores$cant_autores_coautoria
+    igraph::V(g_aut_art)[!igraph::V(g_aut_art)$type]$cant_autores <- vertex_list_articulos$cant_autores
     
     # length(vertex_list_autores$anios)
     # length(vertex_list_articulos$anio)
@@ -230,11 +230,11 @@ agregar_propiedades_a_bipartito <- function(g_aut_art,data_acotado){
     #expected
     expected_attrs <- c('name','id','anio','fuerza_colaboracion','cant_autores','id_old','label')
     
-    stop_condition <-  all(igraph:::vertex_attr_names(g_aut_art) %in% expected_attrs) 
+    stop_condition <-  all(igraph::vertex_attr_names(g_aut_art) %in% expected_attrs) 
     if(stop_condition){
         warning( "No estan todos los atributos esperados",
                  paste0("\nexpected:" , paste0(collapse=";",expected_attrs)),
-                 paste0("\nexistentes:" , paste0(collapse=";",igraph:::vertex_attr_names(g_aut_art)))
+                 paste0("\nexistentes:" , paste0(collapse=";",igraph::vertex_attr_names(g_aut_art)))
            )
         stopifnot(stop_condition)     
     }
@@ -255,7 +255,7 @@ armado_grafo_bipartito <- function(edgelist_para_grafo){
 
     # logic
     
-    g_aut_art <- igraph:::graph.data.frame(data_acotado,directed = FALSE)
+    g_aut_art <- igraph::graph.data.frame(data_acotado,directed = FALSE)
     
     g_aut_art <- transformar_en_bipartito(g_aut_art,data_acotado)
     
@@ -274,22 +274,22 @@ armado_grafo_bipartito <- function(edgelist_para_grafo){
 extraccion_grafo_coautoria <- function(grafo_bipartito,edgelist_para_grafo,width_multiplier = 2,color_brew = 'Dark2'){
     # grafo_bipartito <- gb_ok
     # edgelist_para_grafo <- art_full 
-    g_projections <- igraph:::bipartite_projection(grafo_bipartito,multiplicity = TRUE)
+    g_projections <- igraph::bipartite_projection(grafo_bipartito,multiplicity = TRUE)
     
     g_aut <- g_projections$proj2
     # g_art <- g_projections$proj1
     
     # measure of collaboration strength illustrated in Fig. 5. Newman 2004 ; entonces el tamaño del nodo esta con que tan colaborativo fue
-    igraph:::V(g_aut)$size <- 10 + (igraph:::V(g_aut)$fuerza_colaboracion*10) # *10 para que aumente el tamaño , dejando de ser decimal
+    igraph::V(g_aut)$size <- 10 + (igraph::V(g_aut)$fuerza_colaboracion*10) # *10 para que aumente el tamaño , dejando de ser decimal
     
-    # elist <- igraph:::as_edgelist(g_aut)
-    # igraph:::as_data_frame(g_aut,what="edges")
+    # elist <- igraph::as_edgelist(g_aut)
+    # igraph::as_data_frame(g_aut,what="edges")
     # glimpse(elist)
     
     lista_autores <- lista_vertices_autores(edgelist_para_grafo) %>% select(aut_id,autor)
     
     #data.frame(elist,stringsAsFactors = FALSE)
-    elist_df <- igraph:::as_data_frame(g_aut,what="edges") %>% as_tibble() %>% 
+    elist_df <- igraph::as_data_frame(g_aut,what="edges") %>% as_tibble() %>% 
         rename(autor1=from,autor2=to) %>% 
         mutate(id=paste0(autor1,"--",autor2)) %>% 
         left_join(lista_autores,by=c('autor1'='aut_id')) %>% 
@@ -311,13 +311,13 @@ extraccion_grafo_coautoria <- function(grafo_bipartito,edgelist_para_grafo,width
     }
     
     g_aut <- g_aut %>% 
-        igraph:::set_edge_attr(igraph:::E(g_aut),name = "id",elist_df %>% pull(id)) %>% 
-        igraph:::set_edge_attr(igraph:::E(g_aut),name = "fuerza_colaboracion",fuerza_colaboracion_output) %>% 
-        igraph:::set_edge_attr(igraph:::E(g_aut),name = "anios",anios_output) %>% 
-        igraph:::set_edge_attr(igraph:::E(g_aut),name = "autores",elist_df %>% pull(autores)) %>% 
-        igraph:::set_edge_attr(igraph:::E(g_aut),name = "autor1_label",elist_df %>% pull(autor1_label)) %>% 
-        igraph:::set_edge_attr(igraph:::E(g_aut),name = "autor2_label",elist_df %>% pull(autor2_label))
-        # igraph:::set_edge_attr(igraph:::E(g_aut),name = "autores",autores_output)
+        igraph::set_edge_attr(igraph::E(g_aut),name = "id",elist_df %>% pull(id)) %>% 
+        igraph::set_edge_attr(igraph::E(g_aut),name = "fuerza_colaboracion",fuerza_colaboracion_output) %>% 
+        igraph::set_edge_attr(igraph::E(g_aut),name = "anios",anios_output) %>% 
+        igraph::set_edge_attr(igraph::E(g_aut),name = "autores",elist_df %>% pull(autores)) %>% 
+        igraph::set_edge_attr(igraph::E(g_aut),name = "autor1_label",elist_df %>% pull(autor1_label)) %>% 
+        igraph::set_edge_attr(igraph::E(g_aut),name = "autor2_label",elist_df %>% pull(autor2_label))
+        # igraph::set_edge_attr(igraph::E(g_aut),name = "autores",autores_output)
     
     
     # esto esta para ponerle los colores a los edges segun lo calculado   
@@ -327,7 +327,7 @@ extraccion_grafo_coautoria <- function(grafo_bipartito,edgelist_para_grafo,width
     color_palette <- brewer.pal(bins_cant,name=color_brew)
     
     #criterio_visualizacion <- E(g_aut)$weight # viejo, por peso, que el peso = cant articulos relacion
-    criterio_visualizacion <- igraph:::E(g_aut)$fuerza_colaboracion
+    criterio_visualizacion <- igraph::E(g_aut)$fuerza_colaboracion
 
     threshold <- max(criterio_visualizacion) /3  # par ahacer 3 bins de colores
     edge_color <- colores_edges_en_n_bins(criterio_visualizacion,
@@ -346,8 +346,8 @@ extraccion_grafo_coautoria <- function(grafo_bipartito,edgelist_para_grafo,width
                     3*width_multiplier)
     )
     g_aut <- g_aut %>%
-        igraph:::set_edge_attr(igraph:::E(g_aut),name = "color",edge_color) %>% 
-        igraph:::set_edge_attr(igraph:::E(g_aut),name = "width",edge_width)
+        igraph::set_edge_attr(igraph::E(g_aut),name = "color",edge_color) %>% 
+        igraph::set_edge_attr(igraph::E(g_aut),name = "width",edge_width)
     
     g_aut
 }
@@ -423,8 +423,8 @@ fuerza_colaboracion_y_anios_relacion <- function(edge_analizar_ends,edgelist_par
 
 get_vertex_from_click_vertex <- function(grafo,input_click){
 
-    filter_cond <- str_detect(igraph:::V(grafo)$id,pattern = input_click)
-    vertice <- igraph:::V(grafo)[filter_cond]
+    filter_cond <- str_detect(igraph::V(grafo)$id,pattern = input_click)
+    vertice <- igraph::V(grafo)[filter_cond]
     
     vertice
 }
@@ -473,12 +473,12 @@ obtener_listado_articulos_vertice <- function(db,autor_nombre){
 
 
 generar_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
-    if(!igraph:::is_igraph(g)){
+    if(!igraph::is_igraph(g)){
         warning("el parametro G debe ser un grafo !")
-        stopifnot(igraph:::is_igraph(g))
+        stopifnot(igraph::is_igraph(g))
     }
 
-    subgrafo_autor_ego <- igraph:::make_ego_graph(graph = g, # para el grafo de la red
+    subgrafo_autor_ego <- igraph::make_ego_graph(graph = g, # para el grafo de la red
                                               order=1, # 1 nivel de vecinos
                                               nodes = vertice, # donde el vertice tenga de nombre el selected
                                               mode = "all" )
@@ -489,29 +489,29 @@ generar_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
     subgrafo_autor <- NULL
     for (i in seq_along(subgrafo_autor_ego)){
         x <- subgrafo_autor_ego[[i]]
-        subgrafo_autor <- igraph:::graph.union(subgrafo_autor, x)
+        subgrafo_autor <- igraph::graph.union(subgrafo_autor, x)
     }
     
     
     
     sg2 <- subgrafo_autor %>% 
-        igraph:::set_edge_attr(name="width",value = igraph:::E(subgrafo_autor)$weight) %>%
-        igraph:::set_edge_attr(name="color",value = colores_edges_en_n_bins(igraph:::E(subgrafo_autor)$weight)) %>% 
-        igraph:::set_vertex_attr(name = "title",value = igraph:::V(subgrafo_autor)$name)
-    tmp2 <- igraph:::as_data_frame(sg2) %>% as_tibble() %>% mutate(nombre = paste0(from," - ",to,'<br />',"fuerza colaboración:",fuerza_colaboracion)) %>% pull(nombre)
+        igraph::set_edge_attr(name="width",value = igraph::E(subgrafo_autor)$weight) %>%
+        igraph::set_edge_attr(name="color",value = colores_edges_en_n_bins(igraph::E(subgrafo_autor)$weight)) %>% 
+        igraph::set_vertex_attr(name = "title",value = igraph::V(subgrafo_autor)$name)
+    tmp2 <- igraph::as_data_frame(sg2) %>% as_tibble() %>% mutate(nombre = paste0(from," - ",to,'<br />',"fuerza colaboración:",fuerza_colaboracion)) %>% pull(nombre)
     
 
     sg2 <- sg2 %>% 
-        igraph:::set_edge_attr(name="title",value = tmp2)
+        igraph::set_edge_attr(name="title",value = tmp2)
     
     sg2
 }
 
 generar_visualizacion_subgrafo_vecinos_from_subgrafo <- function(subgrafo,random_seed=12345){
     
-    if(!igraph:::is_igraph(subgrafo)){
+    if(!igraph::is_igraph(subgrafo)){
         warning("el parametro G debe ser un grafo !")
-        stopifnot(igraph:::is_igraph(subgrafo))
+        stopifnot(igraph::is_igraph(subgrafo))
     }
     
     tmp_grafo <- subgrafo
@@ -551,14 +551,14 @@ generar_visualizacion_subgrafo_vecinos_from_subgrafo <- function(subgrafo,random
         set_vertex_attr(name="label",value = label_vertex)
     
     
-    resultado_visnet <-  visNetwork:::visIgraph(tmp_grafo,
+    resultado_visnet <-  visNetwork::visIgraph(tmp_grafo,
                                                 idToLabel = FALSE,
                                                 randomSeed = random_seed ) %>% 
-        visNetwork:::visNodes(size = 10) %>%
-        visNetwork:::visIgraphLayout(randomSeed = random_seed,
+        visNetwork::visNodes(size = 10) %>%
+        visNetwork::visIgraphLayout(randomSeed = random_seed,
                                      layout="layout_in_circle"
         ) %>%
-        visNetwork:::visOptions(highlightNearest = list(enabled = TRUE, hover = TRUE),
+        visNetwork::visOptions(highlightNearest = list(enabled = TRUE, hover = TRUE),
                                 nodesIdSelection =FALSE)
     resultado_visnet
 }
@@ -566,9 +566,9 @@ generar_visualizacion_subgrafo_vecinos_from_subgrafo <- function(subgrafo,random
 
 generar_visualizacion_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
 
-    if(!igraph:::is_igraph(g)){
+    if(!igraph::is_igraph(g)){
         warning("el parametro G debe ser un grafo !")
-        stopifnot(igraph:::is_igraph(g))
+        stopifnot(igraph::is_igraph(g))
     }
     
     sg2 <- generar_subgrafo_vecinos (g,vertice,random_seed)
@@ -579,7 +579,7 @@ generar_visualizacion_subgrafo_vecinos <- function(g,vertice,random_seed=12345){
 }
 
 armar_heatmap_ggplot_from_grafo <- function(g, color_palette="Dark2"){
-    edge_list <- igraph:::as_data_frame(g,what="edges") %>% as_tibble()
+    edge_list <- igraph::as_data_frame(g,what="edges") %>% as_tibble()
     
     # var1 <- edge_list %>% pull(from)
     # var2 <- edge_list %>% pull(to)
@@ -606,43 +606,43 @@ armar_heatmap_ggplot_from_grafo <- function(g, color_palette="Dark2"){
 # Este calcula la estructura sobre el grafo , las cosas que pueden ser extraidas desde el grafo
 calcular_estructura_sobre_grafo <- function(grafo_reactive_tmp){
     resultado <- data.frame(tmp =c(''))
-    resultado$cant_autores <- igraph:::gorder(grafo_reactive_tmp)
+    resultado$cant_autores <- igraph::gorder(grafo_reactive_tmp)
     
     # cantidad relaciones
-    resultado$cant_relaciones <- length(igraph:::E(grafo_reactive_tmp))
+    resultado$cant_relaciones <- length(igraph::E(grafo_reactive_tmp))
     
     #densidad de la red
-    resultado$densidad_red <- igraph:::edge_density(grafo_reactive_tmp)
+    resultado$densidad_red <- igraph::edge_density(grafo_reactive_tmp)
     
-    resultado$distancia_media <- igraph:::mean_distance(grafo_reactive_tmp)
+    resultado$distancia_media <- igraph::mean_distance(grafo_reactive_tmp)
     
-    mas_lejanos <- igraph:::farthest_vertices(grafo_reactive_tmp)
+    mas_lejanos <- igraph::farthest_vertices(grafo_reactive_tmp)
     resultado$num_dist_lejanos <-  mas_lejanos$distance
     #resultado$str_dist_lejanos_1 <- names(mas_lejanos$vertice[1])
     #resultado$str_dist_lejanos_2 <- names(mas_lejanos$vertice[2])
     
-    #resultado$diametro_participantes <- igraph:::get_diameter(grafo_reactive_tmp) %>% names() %>%paste0(collapse='; ')
+    #resultado$diametro_participantes <- igraph::get_diameter(grafo_reactive_tmp) %>% names() %>%paste0(collapse='; ')
     
-    largest_clique_str <- igraph:::largest_cliques(grafo_reactive_tmp) %>% unlist() %>% names()
+    largest_clique_str <- igraph::largest_cliques(grafo_reactive_tmp) %>% unlist() %>% names()
     
     resultado$num_largest_cliques <- length(largest_clique_str )
     #resultado$str_largest_cliques <- largest_clique_str  %>%paste0(collapse='; ')
     resultado$porc_largest_cliques <- resultado$num_largest_cliques / resultado$cant_autores * 100 
     
-    resultado$num_cliques <- igraph:::clique_num(grafo_reactive_tmp)
-    resultado$num_transitivity <- igraph:::transitivity(grafo_reactive_tmp)
-    resultado$num_assort_degree <- igraph:::assortativity_degree(grafo_reactive_tmp)
+    resultado$num_cliques <- igraph::clique_num(grafo_reactive_tmp)
+    resultado$num_transitivity <- igraph::transitivity(grafo_reactive_tmp)
+    resultado$num_assort_degree <- igraph::assortativity_degree(grafo_reactive_tmp)
     
     #largest component, no es lo mismo que largest clique.
     # esta la funcion http://igraph.org/r/doc/components.html
     
-    componentes <- igraph:::components(grafo_reactive_tmp)
+    componentes <- igraph::components(grafo_reactive_tmp)
     
     resultado$componentes_largest <- max(componentes$csize)
     resultado$componentes_largest_porc <- resultado$componentes_largest / resultado$cant_autores * 100
     resultado$componentes_cantidad <- length(componentes$csize)
     # average distance
-    resultado$distancia_media <- igraph:::mean_distance(grafo_reactive_tmp)
+    resultado$distancia_media <- igraph::mean_distance(grafo_reactive_tmp)
     
     resultado[,2:ncol(resultado)]
 }
@@ -729,41 +729,41 @@ estructura_grafo_para_DT <- function(estructura_grafo_df,dt_option_dom='ft'){
 
 # metricas para nodos dado un grafo
 metricas_nodos_grafo <- function(grafo_reactive_tmp){
-    grado_valor <- igraph:::degree(grafo_reactive_tmp) %>% data.frame()
+    grado_valor <- igraph::degree(grafo_reactive_tmp) %>% data.frame()
     grado_valor$autor <- rownames(grado_valor)
     colnames(grado_valor) <- c('degree','autor')
     grado_valor <- grado_valor %>% select(autor,degree)
     
     # betweeness
-    betweeness_valores <- igraph:::betweenness(grafo_reactive_tmp) %>% data.frame()
+    betweeness_valores <- igraph::betweenness(grafo_reactive_tmp) %>% data.frame()
     betweeness_valores$autor <- rownames(betweeness_valores)
     colnames(betweeness_valores) <- c('betweeness','autor')
     
     # eigenvector centrality
-    eigen_valor <- igraph:::eigen_centrality(grafo_reactive_tmp)$vector %>% data.frame()
+    eigen_valor <- igraph::eigen_centrality(grafo_reactive_tmp)$vector %>% data.frame()
     eigen_valor$autor <- rownames(eigen_valor)
     colnames(eigen_valor) <- c('eigen_centrality','autor')
     
     # closeness centrality
-    closeness_valor <- igraph:::closeness(grafo_reactive_tmp) %>% data.frame()
+    closeness_valor <- igraph::closeness(grafo_reactive_tmp) %>% data.frame()
     closeness_valor$autor <- rownames(closeness_valor)
     colnames(closeness_valor) <- c('closeness','autor')
     
     # pagerank centrality
-    page_rank_valor <- igraph:::page_rank(grafo_reactive_tmp)$vector %>% data.frame()
+    page_rank_valor <- igraph::page_rank(grafo_reactive_tmp)$vector %>% data.frame()
     page_rank_valor$autor <- rownames(page_rank_valor)
     colnames(page_rank_valor) <- c('page_rank','autor')
     
     #triangulos
-    triangulos_count <- igraph:::count_triangles(grafo_reactive_tmp) %>% data.frame()
-    triangulos_count$autor <-  igraph:::V(grafo_reactive_tmp)$name
+    triangulos_count <- igraph::count_triangles(grafo_reactive_tmp) %>% data.frame()
+    triangulos_count$autor <-  igraph::V(grafo_reactive_tmp)$name
     colnames(triangulos_count) <- c('count_triangles','autor')
     
     
     # nombre nodo
-    nombres_nodos <- data.frame(nombre_autor=igraph:::V(grafo_reactive_tmp)$label,
-                                autor=igraph:::V(grafo_reactive_tmp)$name,
-                                fuerza_colaboracion=igraph:::V(grafo_reactive_tmp)$fuerza_colaboracion,
+    nombres_nodos <- data.frame(nombre_autor=igraph::V(grafo_reactive_tmp)$label,
+                                autor=igraph::V(grafo_reactive_tmp)$name,
+                                fuerza_colaboracion=igraph::V(grafo_reactive_tmp)$fuerza_colaboracion,
                                 stringsAsFactors = FALSE)
 
     estructura_red_df <- nombres_nodos %>% 
@@ -787,12 +787,12 @@ metricas_nodos_grafo <- function(grafo_reactive_tmp){
 # tmp <- generar_grafos_similares(grafo_reactive_tmp)
 # para generacion grafos similares
 generar_grafos_similares <- function(grafo_reactive_tmp,cantidad=1000) {
-    cant_autores <- igraph:::gorder(grafo_reactive_tmp)
-    densidad_red <- igraph:::edge_density(grafo_reactive_tmp)
+    cant_autores <- igraph::gorder(grafo_reactive_tmp)
+    densidad_red <- igraph::edge_density(grafo_reactive_tmp)
     
     # lista_generados <- vector('list',cantidad)
     
-    lista_generados <- purrr::map(1:cantidad,~ igraph:::barabasi.game(n = cant_autores,directed = FALSE ))
+    lista_generados <- purrr::map(1:cantidad,~ igraph::barabasi.game(n = cant_autores,directed = FALSE ))
     
     # 1000
     # for (i in 1:cantidad){
@@ -803,7 +803,7 @@ generar_grafos_similares <- function(grafo_reactive_tmp,cantidad=1000) {
     #     #     type = 'gnp',
     #     #     directed=FALSE)
     #     
-    #     lista_generados[[i]] <- igraph:::barabasi.game(n = cant_autores,directed = FALSE )
+    #     lista_generados[[i]] <- igraph::barabasi.game(n = cant_autores,directed = FALSE )
     # }
     
     lista_generados
@@ -816,12 +816,12 @@ arma_comunidad <- function(semilla_seed,tmp_grafo,comunidades_sel_algo){
     comunidad_sel_detalles <- ''
     
     comunidad_sel_detalles <-  switch(comunidades_sel_algo,
-                                      cluster_edge_betweenness = igraph:::cluster_edge_betweenness(tmp_grafo,weights = NULL),
-                                      cluster_label_prop = igraph:::cluster_label_prop(tmp_grafo),
-                                      cluster_leading_eigen = igraph:::cluster_leading_eigen(tmp_grafo),
-                                      cluster_louvain = igraph:::cluster_louvain(tmp_grafo),
-                                      cluster_walktrap = igraph:::cluster_walktrap(tmp_grafo),
-                                      cluster_infomap = igraph:::cluster_infomap(tmp_grafo),
+                                      cluster_edge_betweenness = igraph::cluster_edge_betweenness(tmp_grafo,weights = NULL),
+                                      cluster_label_prop = igraph::cluster_label_prop(tmp_grafo),
+                                      cluster_leading_eigen = igraph::cluster_leading_eigen(tmp_grafo),
+                                      cluster_louvain = igraph::cluster_louvain(tmp_grafo),
+                                      cluster_walktrap = igraph::cluster_walktrap(tmp_grafo),
+                                      cluster_infomap = igraph::cluster_infomap(tmp_grafo),
                                       stop(paste0('NO DISPONIBLE',comunidades_sel_algo))
     )
     
@@ -830,7 +830,7 @@ arma_comunidad <- function(semilla_seed,tmp_grafo,comunidades_sel_algo){
 # nombre=names_memb, > nombres de los vertices
 # member=values_memb > comunidad de membresia
 armar_df_membership <- function(comunidad_sel_detalles){
-    memb <- igraph:::membership(comunidad_sel_detalles)
+    memb <- igraph::membership(comunidad_sel_detalles)
     values_memb <- as.vector(memb)
     names_memb <- names(memb) 
     membership_df <- data.frame(nombre=names_memb,member=values_memb,stringsAsFactors = FALSE) %>% as_tibble()
@@ -876,8 +876,8 @@ estructura_comunidades_df <- function(current_grafo,current_base_autores,current
     
     for(i in 1:length(current_comunidad)){
         current_group <- igraph::groups(current_comunidad)[[i]]
-        current_subgraph <- igraph:::induced_subgraph(current_grafo,current_group) 
-        current_autores <- igraph:::V(current_subgraph)$label
+        current_subgraph <- igraph::induced_subgraph(current_grafo,current_group) 
+        current_autores <- igraph::V(current_subgraph)$label
         base_autores_tmp <- current_base_autores %>% filter(autor %in% current_autores)
         
         estructura_grafo_df <- calcular_estructura_grafo(current_subgraph,base_autores_tmp)
@@ -1080,7 +1080,7 @@ fuerza_colaboracion_autorut_expected_validator <- function(current_autor, data_a
     
     FCAut_expected <- total %>% pull(total_fca) %>% as.numeric()
     
-    vertex_current <- igraph:::V(grafo_bipartito)[str_detect(igraph:::V(grafo_bipartito)$label,current_autor) ]
+    vertex_current <- igraph::V(grafo_bipartito)[str_detect(igraph::V(grafo_bipartito)$label,current_autor) ]
     FCAut_current <- vertex_current$fuerza_colaboracion
     
     if (con_mensaje) {
@@ -1115,10 +1115,10 @@ show_details_vertex <- function(filter_vertex){
 
 show_bipart_vertex_id_diff <- function(grafo,data_acotado){
     vertex_list_autores <- lista_vertices_autores(data_acotado)
-    tmp_df <- data.frame(id=igraph:::V(grafo)$id,
-                         name=igraph:::V(grafo)$name,
-                         label=igraph:::V(grafo)$label,
-                         fuerza_colaboracion=igraph:::V(grafo)$fuerza_colaboracion,
+    tmp_df <- data.frame(id=igraph::V(grafo)$id,
+                         name=igraph::V(grafo)$name,
+                         label=igraph::V(grafo)$label,
+                         fuerza_colaboracion=igraph::V(grafo)$fuerza_colaboracion,
                          stringsAsFactors = FALSE)
 
     # id se agrega a mano ,
