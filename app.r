@@ -16,6 +16,10 @@ source(here:::here("funcs","globals.r"),encoding = "UTF-8")
 
 # EDA 
 source(here:::here("funcs","shiny_module_exploratorio_tablas.r"),encoding = "UTF-8")
+
+# estructura nodos
+source(here:::here("funcs","shiny_module_estructura_nodos.r"),encoding = "UTF-8")
+
 # componentes
 source(here:::here("funcs","shiny_module_subgrafos.r"),encoding = "UTF-8")
 

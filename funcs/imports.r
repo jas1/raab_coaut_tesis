@@ -26,12 +26,14 @@ library(testthat)#install.packages("testthat")
 library(igraphdata)#install.packages("igraphdata")
 library(forcats)#install.packages("forcats")
 library(visdat)#install.packages("visdat")
-
+library(ggridges)#install.packages("ggridges")
 library(skimr)#install.packages("skimr")
 # https://github.com/timelyportfolio/RBioFabric/issues/1
 
 library(Rcpp)#install.packages("Rcpp")
 library(devtools)#install.packages("devtools")
+
+
 
 library(htmlwidgets)#install.packages("htmlwidgets")
 

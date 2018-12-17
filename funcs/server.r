@@ -570,51 +570,60 @@ server <- function(input, output,session) {
         })
     
 # estructura de nodos  -----------------------------------------------------------------------------------------------
-    estructura_nodos_grafo_reactive <- reactive({
-        grafo_reactive_tmp <- static_network_grafo_reactive()
+    
+    # dentro del observe event para que si cambia la seleccion se actualice
+    observeEvent(input$input_static_periodos,{
         
-        estructura_red_df <- metricas_nodos_grafo(grafo_reactive_tmp) %>%
-            
-            rename('Autor' = autor,
-                   'Grado' = degree,
-                   'Betweeness' = betweeness,
-                   'Eigen Centrality' = eigen_centrality,
-                   'Closeness' = closeness,
-                   'Page Rank' = page_rank,
-                   '# Triangulos' = count_triangles,
-                   'Fuerza Colaboración' = fuerza_colaboracion)
-        
-        estructura_red_df
+        callModule(estructura_nodos_server, "est_nodos",
+                   static_network_grafo_reactive()# parametros del componente: grafo
+        )
     })
     
-    estructura_red_grafo_dt <- reactive({
-        
-        dt_return <- DT::datatable(options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')),
-                                   estructura_nodos_grafo_reactive(),
-                                   escape = FALSE,
-                                   rownames = FALSE,
-                                   selection = 'none') %>%
-            formatRound('Betweeness',4) %>%
-            formatRound('Eigen Centrality',4) %>%
-            formatRound('Closeness',7) %>%
-            formatRound('Page Rank',4) %>%
-            formatRound('Fuerza Colaboración',4) 
-        
-        dt_return
-    })
-    
-    output$output_static_estructura_nodos_table <- DT::renderDataTable({ 
-        # ver inconexos, ver, top 10 , ver last 10 o last N , sin contar inconexos. 
-        # todo eso sale de la tabla. 
-        # hay que agregar tooltips de inteprretacion.
-        estructura_red_grafo_dt()
-    })
-    
-    # exportar nodos
-    output$output_static_download_est_nodos <- downloadHandler( 
-        filename = paste('est_nodos-', Sys.Date(), '.csv', sep=''), content = function(file) {
-            write.csv(estructura_nodos_grafo_reactive(), file,row.names = FALSE)
-        })
+    # estructura_nodos_grafo_reactive <- reactive({
+    #     grafo_reactive_tmp <- static_network_grafo_reactive()
+    #     
+    #     estructura_red_df <- metricas_nodos_grafo(grafo_reactive_tmp) %>%
+    #         
+    #         rename('Autor' = autor,
+    #                'Grado' = degree,
+    #                'Betweeness' = betweeness,
+    #                'Eigen Centrality' = eigen_centrality,
+    #                'Closeness' = closeness,
+    #                'Page Rank' = page_rank,
+    #                '# Triangulos' = count_triangles,
+    #                'Fuerza Colaboración' = fuerza_colaboracion)
+    #     
+    #     estructura_red_df
+    # })
+    # 
+    # estructura_red_grafo_dt <- reactive({
+    #     
+    #     dt_return <- DT::datatable(options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')),
+    #                                estructura_nodos_grafo_reactive(),
+    #                                escape = FALSE,
+    #                                rownames = FALSE,
+    #                                selection = 'none') %>%
+    #         formatRound('Betweeness',4) %>%
+    #         formatRound('Eigen Centrality',4) %>%
+    #         formatRound('Closeness',7) %>%
+    #         formatRound('Page Rank',4) %>%
+    #         formatRound('Fuerza Colaboración',4) 
+    #     
+    #     dt_return
+    # })
+    # 
+    # output$output_static_estructura_nodos_table <- DT::renderDataTable({ 
+    #     # ver inconexos, ver, top 10 , ver last 10 o last N , sin contar inconexos. 
+    #     # todo eso sale de la tabla. 
+    #     # hay que agregar tooltips de inteprretacion.
+    #     estructura_red_grafo_dt()
+    # })
+    # 
+    # # exportar nodos
+    # output$output_static_download_est_nodos <- downloadHandler( 
+    #     filename = paste('est_nodos-', Sys.Date(), '.csv', sep=''), content = function(file) {
+    #         write.csv(estructura_nodos_grafo_reactive(), file,row.names = FALSE)
+    #     })
 
 # estructura - COMPONENTES ------------------------------------------------
     observeEvent(input$input_static_periodos,{

@@ -97,13 +97,15 @@ subgrafos_ui <- function(id, # escencial para poder armar el componente
                     '( input.dt_autores_subgrafos_rows_selected!= null && input.dt_autores_subgrafos_rows_selected != "" )',
                     ns=ns, 
                     div(
-                        h2('Nodos Subgrafo'),
-                        br(),
-                        downloadButton (outputId = ns("dw_nodos_subgrafos"),
-                                        label = "Bajar nodos"),
-                        br(),
-                        br(),
-                        DT::dataTableOutput(ns('dt_nodos_subgrafos'))
+                        # h2('Nodos Subgrafo'),
+                        # br(),
+                        # downloadButton (outputId = ns("dw_nodos_subgrafos"),
+                        #                 label = "Bajar nodos"),
+                        # br(),
+                        # br(),
+                        # DT::dataTableOutput(ns('dt_nodos_subgrafos'))
+                        estructura_nodos_ui(ns("est_nodos_subgrafos"))
+                        
                     ) # fin div detalle comunidad  
                 )# fin conditional seleccion
                 ) # fin del div del append
@@ -212,43 +214,59 @@ subgrafos_server <- function(input, output, session, # parametros de shiny
     
 
 # NODOS -------------------------------------------------------------------
-    nodos_subgrafos_reactive <- reactive({
-
-        # current_com_selected <- autores_subgrafos_reactive()[,]
-        # 
-        # glimpse(current_com_selected)
-        # glimpse(subgrafos_reactive())
+    
+    current_grafo_selected <- reactive({
         current_com_selected_id <- input$dt_autores_subgrafos_rows_selected
-        
         grafo_reactive_tmp <- subgrafos_reactive()[[current_com_selected_id]]
         
-        nodos_df <- metricas_nodos_grafo(grafo_reactive_tmp) %>%
-            rename('Autor' = autor,
-                   'Grado' = degree,
-                   'Betweeness' = betweeness,
-                   'Eigen Centrality' = eigen_centrality,
-                   'Closeness' = closeness,
-                   'Page Rank' = page_rank,
-                   '# Triangulos' = count_triangles,
-                   'Fuerza Colaboración' = fuerza_colaboracion)
-        
-        nodos_df
+        # print(igraph::vcount(grafo_reactive_tmp))
+
+        grafo_reactive_tmp
     })
-    
-    output$dw_nodos_subgrafos <- downloadHandler( 
-        filename = paste("sub_","nodos","_", Sys.Date(), '.csv', sep=''), content = function(file) {
-            write.csv(nodos_subgrafos_reactive(), file,row.names = FALSE,fileEncoding = "UTF-8")
-        })
-    
-    output$dt_nodos_subgrafos <- DT::renderDataTable({
-        dt_out <- DT::datatable(
-            nodos_subgrafos_reactive(),
-            options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')),
-            escape = FALSE,
-            rownames = FALSE,
-            selection="none")
-        dt_out
+
+    observeEvent(input$dt_autores_subgrafos_rows_selected,{
+        callModule(estructura_nodos_server, "est_nodos_subgrafos",
+                   current_grafo_selected()# parametros del componente: grafo
+        )
     })
+
+    # nodos_subgrafos_reactive <- reactive({
+    # 
+    #     # current_com_selected <- autores_subgrafos_reactive()[,]
+    #     # 
+    #     # glimpse(current_com_selected)
+    #     # glimpse(subgrafos_reactive())
+    #     current_com_selected_id <- input$dt_autores_subgrafos_rows_selected
+    #     
+    #     grafo_reactive_tmp <- subgrafos_reactive()[[current_com_selected_id]]
+    #     
+    #     nodos_df <- metricas_nodos_grafo(grafo_reactive_tmp) %>%
+    #         rename('Autor' = autor,
+    #                'Grado' = degree,
+    #                'Betweeness' = betweeness,
+    #                'Eigen Centrality' = eigen_centrality,
+    #                'Closeness' = closeness,
+    #                'Page Rank' = page_rank,
+    #                '# Triangulos' = count_triangles,
+    #                'Fuerza Colaboración' = fuerza_colaboracion)
+    #     
+    #     nodos_df
+    # })
+    # 
+    # output$dw_nodos_subgrafos <- downloadHandler( 
+    #     filename = paste("sub_","nodos","_", Sys.Date(), '.csv', sep=''), content = function(file) {
+    #         write.csv(nodos_subgrafos_reactive(), file,row.names = FALSE,fileEncoding = "UTF-8")
+    #     })
+    # 
+    # output$dt_nodos_subgrafos <- DT::renderDataTable({
+    #     dt_out <- DT::datatable(
+    #         nodos_subgrafos_reactive(),
+    #         options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')),
+    #         escape = FALSE,
+    #         rownames = FALSE,
+    #         selection="none")
+    #     dt_out
+    # })
     
     
 }

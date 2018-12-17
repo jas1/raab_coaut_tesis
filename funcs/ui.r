@@ -282,13 +282,14 @@ body <- dashboardBody(
 # metricas nodos ----------------------------------------------------------
                                                               bs_set_opts(panel_type = "info") %>%
                                                               bs_append(title = "Métricas de Nodos", content = div(
-                                                                  
-                                                                  br(),
-                                                                  downloadButton (outputId = "output_static_download_est_nodos",
-                                                                                  label = "Bajar est. nodos"),
-                                                                  br(),
-                                                                  br(),
-                                                                  DT::dataTableOutput('output_static_estructura_nodos_table')
+                                                                  estructura_nodos_ui("est_nodos")
+                                                      
+                                                                  # br(),
+                                                                  # downloadButton (outputId = "output_static_download_est_nodos",
+                                                                  #                 label = "Bajar est. nodos"),
+                                                                  # br(),
+                                                                  # br(),
+                                                                  # DT::dataTableOutput('output_static_estructura_nodos_table')
                                                               )# fin div
                                                               ) %>%
 
