@@ -28,15 +28,11 @@ library(forcats)#install.packages("forcats")
 library(visdat)#install.packages("visdat")
 library(ggridges)#install.packages("ggridges")
 library(skimr)#install.packages("skimr")
-# https://github.com/timelyportfolio/RBioFabric/issues/1
 
+# https://github.com/timelyportfolio/RBioFabric/issues/1
 library(Rcpp)#install.packages("Rcpp")
 library(devtools)#install.packages("devtools")
-
-
-
 library(htmlwidgets)#install.packages("htmlwidgets")
-
-devtools::install_github("jas1/RBioFabric")
-library(RBioFabric)
+library(jsonlite)#install.packages("jsonlite")
+library(RBioFabric) # devtools::install_github("jas1/RBioFabric")
 # devtools::install_github()RBioFabric_0.4
