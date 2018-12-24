@@ -809,6 +809,187 @@ generar_grafos_similares <- function(grafo_reactive_tmp,cantidad=1000) {
     lista_generados
 }
 
+
+# FUNCIONES: ESTRUCTURA GRAFO: SIMULACIONES  ------------------------------
+
+# entra listado simulaciones + parametros
+# lo extraigo a funcion porque lo voy a tener que hacer en los 3 modelos
+# si eventualmente hay otros modelos se toca en 1 solo lugar
+# lo mismo si se agregan metricas, se agregan en 1 solo lugar
+# sale metricas resumidas + parametros
+simulaciones_to_resumen_ejecucion <- function(simulaciones_metricas_list,params_list){
+    # armar el DF de la lista
+    simulaciones_metricas_df <- simulaciones_metricas_list %>% 
+        dplyr::bind_rows()
+    
+    # armar las metricas resumen de interes: OJO DEBEN EXISTIR EN EL LISTADO !
+    simulaciones_metricas_df_acum <- simulaciones_metricas_df %>% 
+        summarise(
+            mean_transitivity=mean(transitivity),
+            mean_diameter=mean(diameter),
+            mean_avg_path_length=mean(avg_path),
+            mean_pow_law_alpha=mean(pow_law_alpha),
+            mean_pow_law_greater_than_1=mean(pow_law_greater_than_1),
+            mean_pow_law_ks_p=mean(pow_law_ks_p),
+            mean_pow_law_ks_p_is_signif=mean(pow_law_ks_p_is_signif))
+    
+    # junto las metricas con los parametros y ordeno parametros adelante, metricas al final
+    resultado <- simulaciones_metricas_df_acum %>% 
+        bind_cols(params_list) %>% 
+        select(starts_with("param_"),starts_with("mean_"))
+    
+    # devuelvo el resultado ordenado parametros adelante, metricas al final
+    resultado
+}
+
+# guardo todos los resultados, les agrego los parametros.
+simulaciones_to_resultados_con_params <- function(simulaciones_metricas_list,params_list){
+    # armar el DF de la lista
+    
+    # simulaciones_metricas_list <- simulaciones_metricas
+    simulaciones_metricas_df <- simulaciones_metricas_list %>% 
+        map(~bind_cols(.x,params_list)) %>% 
+        dplyr::bind_rows() %>% as_tibble()
+    
+    
+    
+    # junto las metricas con los parametros y ordeno parametros adelante, metricas al final
+    resultado <- simulaciones_metricas_df %>% 
+        # bind_cols(params_list) %>% 
+        select(dplyr::starts_with("param_"),colnames(simulaciones_metricas_list[[1]]))
+    
+    # devuelvo el resultado ordenado parametros adelante, metricas al final
+    resultado
+}
+
+# dado un grafo
+# para que aca se cambie toda la parte de metricas 
+# y se apliquen los mismos calculos en cada simulacion
+calcular_metricas <- function(grafo,ks_p_signif=0.05){
+    current_transitivity <- transitivity(grafo)
+    current_diameter <- diameter(grafo) # distance between vertices is non-trivial. diameter 10 . avg path = 5.45
+    current_avg_path <- average.path.length(grafo) 
+    
+    # power law fit
+    resultado_fit_ley_potencia <- power.law.fit(igraph::degree(grafo))
+    # ¿El parámetro alfa de la función es mayor que 1? ¿Si? OK
+    # 2.515571
+    pow_law_alpha <- resultado_fit_ley_potencia$alpha
+    pow_law_greater_than_1 <- resultado_fit_ley_potencia$alpha > 1 
+    
+    # ¿El test de ajuste de Kolmogorov-Smirnov es no significativo? OK.
+    # Numeric scalar, the p-value of the Kolmogorov-Smirnov test. 
+    # Small p-values (less than 0.05) indicate that the test rejected the hypothesis 
+    # that the original data could have been drawn from the fitted power-law distribution.
+    pow_law_ks_p <- resultado_fit_ley_potencia$KS.p
+    pow_law_ks_p_is_signif <- resultado_fit_ley_potencia$KS.p < ks_p_signif
+    
+    #return for each
+    ret <- data.frame(transitivity=current_transitivity,
+               diameter=current_diameter,
+               avg_path=current_avg_path,
+               pow_law_alpha=pow_law_alpha,
+               pow_law_greater_than_1=pow_law_greater_than_1,
+               pow_law_ks_p=pow_law_ks_p,
+               pow_law_ks_p_is_signif=pow_law_ks_p_is_signif)
+    ret
+}
+
+# porque contra random ?
+# porque la verificacion de small wolrd se corre contra modelos 
+# aleatorios y la hipotesis era decir " che aca hay algo "
+# Generate random graphs according to the G(n,m) Erdos-Renyi model
+simular_random <- function(iter=100,vertex_count=100, edge_count=100,semilla=12345){
+    #  iter=100; vertex_count=100; edge_count=100; semilla=12345
+    set.seed(semilla)
+    
+    # maximo de edges en un grafo = n * (n-1) /2
+    max_posible_edges <- vertex_count * (vertex_count-1) /2
+    valida_max <-  edge_count <= max_posible_edges
+    
+    stopifnot(edge_count <= max_posible_edges)
+    
+    # if(!valida_max){
+    #     mensaje <- paste0("Excede nro maximo de edges. maximo: ",max_edges," actual: ",edge_count)
+    #     warning(mensaje)
+    #     stopifnot(valida_max)
+    # }
+    
+    
+
+    # para cada 
+    # obtener las simulaciones
+    simulaciones_metricas <- purrr::map(seq_along(1:iter),function(x){
+        # print(x)
+        g_gnm <- igraph::sample_gnm(vertex_count, edge_count)
+        ret <- calcular_metricas(g_gnm)
+        ret
+    })
+    
+    params_list <- data.frame(param_iter=iter,
+                              param_vertex_count=vertex_count,
+                              param_edge_count=edge_count,
+                              stringsAsFactors = FALSE)
+    #  iter=100; vertex_count=100; edge_count=100; semilla=12345
+    
+    
+    
+    simulaciones_metricas_df_resumen <- simulaciones_to_resultados_con_params(simulaciones_metricas,params_list)
+    
+    simulaciones_metricas_df_resumen
+}
+
+# porque contra small world ? porque interesa ver si se parece
+# mas alla de las metricas de la red para comparar con las otras.
+# correr 100 veces y sacar un promedio
+# devuelve: parametros + media: avg_path_length
+simular_small_world <- function(iter=100,vertex_count=100,vecindad=5,prob_reescritura=0.05,semilla=12345){
+    #  semilla <- 12345 ; iter <- 100;  vertex_count <- 100; vecindad <- 5 ; prob_reescritura <- 0.05
+    set.seed(semilla)
+    
+    # lista de parametros
+    params_list <- data.frame(param_iter=iter,
+                              param_vertex_count=vertex_count,
+                              param_vecindad=vecindad,
+                              param_prob_reescritura=prob_reescritura,stringsAsFactors = FALSE)
+    
+    # para cada 
+    # obtener las simulaciones
+    simulaciones_sw_metricas <- purrr::map(seq_along(1:iter),function(x){
+        # print(x)
+        g_small_world <- igraph::sample_smallworld(1, vertex_count, vecindad, prob_reescritura)
+        ret <- calcular_metricas(g_small_world)
+        ret
+    })
+    
+    simulaciones_sw_met_df_acum <- simulaciones_to_resultados_con_params(simulaciones_sw_metricas,params_list)
+    simulaciones_sw_met_df_acum
+}
+
+simular_scale_free <- function(iter=100,vertex_count=100,poder_pref_attach=3,m_edges_per_step=8,semilla=12345){
+    #  iter<-100;vertex_count<-100;poder_pref_attach<-5;m_edges_per_step<-0.05;semilla<-12345
+    set.seed(semilla)
+    
+    # lista de parametros
+    params_list <- data.frame(param_iter=iter,
+                              param_vertex_count=vertex_count,
+                              param_poder_pref_attach=poder_pref_attach,
+                              param_m_edges_per_step=m_edges_per_step,stringsAsFactors = FALSE)
+    
+    # para cada 
+    # obtener las simulaciones
+    simulaciones_metricas <- purrr::map(seq_along(1:iter),function(x){
+        # print(x)
+        grafo <- igraph::sample_pa(n = vertex_count,power = poder_pref_attach ,m= m_edges_per_step)
+        ret <- calcular_metricas(grafo)
+        ret
+    })
+    
+    simulacione_df_acum <- simulaciones_to_resultados_con_params(simulaciones_metricas,params_list)
+    simulacione_df_acum
+}
+
+
 # FUNCIONES: COMUNIDADES-----------------------------------------------------------------
 
 arma_comunidad <- function(semilla_seed,tmp_grafo,comunidades_sel_algo){

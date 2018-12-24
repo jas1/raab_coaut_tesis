@@ -28,6 +28,7 @@ library(forcats)#install.packages("forcats")
 library(visdat)#install.packages("visdat")
 library(ggridges)#install.packages("ggridges")
 library(skimr)#install.packages("skimr")
+library(ggrepel)#install.packages("ggrepel")
 
 # https://github.com/timelyportfolio/RBioFabric/issues/1
 library(Rcpp)#install.packages("Rcpp")

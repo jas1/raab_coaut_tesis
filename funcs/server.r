@@ -636,6 +636,14 @@ server <- function(input, output,session) {
 
     
 # estructura - SIMULACION -------------------------------------------------
+
+    # si cambia el grafo se vuelve a renderizar el modulo.
+    observeEvent(input$input_static_periodos,{
+        
+        callModule(estructura_modelos_server, "modelos",
+                   static_network_grafo_reactive() # parametros del componente: grafo # parametros del componente: base articulos
+        )
+    })
     
     # # var comparar simulacion
     # estructura_red_vars_compara_simu_reactive <- reactive({
