@@ -1,0 +1,176 @@
+---
+title: "explorando_cant_autores_en_tiempo"
+author: "julio"
+date: "27 de marzo de 2019"
+output: html_document
+---
+---
+title: "Analisis exploratorio RAAB"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+# IMPORT LIBS ----------------------------------------------------------------------------
+library(here)#install.packages("here")
+library(visdat)#install.packages("visdat")
+source(here:::here("funcs","imports.r"),encoding = "UTF-8")
+# FUNCIONES -------------------------------------------------------------------
+source(here:::here("funcs","funciones.r"),encoding = "UTF-8")
+```
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+# SCRIPT -------------------------------------------------------------------
+db_name <- "db_raab_grafos.sqlite"
+raab_db_conn <- get_db_connection(db_name)
+
+cota_seccion <- c("Trabajos Originales")
+cota_anio <-  c(1996:2016)
+
+
+autores_raw <- dbGetQuery(raab_db_conn, paste0("select * from ", "autores" )) %>% as_tibble()
+articulos_raw <- dbGetQuery(raab_db_conn, paste0("select * from ", "articulos" )) %>% as_tibble()
+autores_articulos_raw <- dbGetQuery(raab_db_conn, paste0("select * from ", "autores_articulos" )) %>% as_tibble()
+ 
+autores_articulos <- autores_articulos_raw %>% 
+    filter(anio %in% cota_anio) %>% 
+    filter(seccion %in% cota_seccion) 
+    
+autores <- autores_articulos %>% select(autor) %>% unique() %>% left_join(autores_raw)
+articulos <- autores_articulos %>% select(articulo_id) %>% unique() %>% left_join(articulos_raw)
+
+
+dbDisconnect(raab_db_conn)
+
+```
+
+dados los siguientes objetivos: 
+
+● Métricas generales a fin de analizar por períodos de agregación y la red completa. De
+las métricas que se tendrán en cuenta se destacan: (a) artículos con más de un autor,
+(b) autores que participan en artículos con más de un autor, (c) índice de colaboración,
+siendo este último una relación entre las medidas (b) / (c)
+
+● Patrones de autoría, es decir, cuántos artículos por cantidad de autores existen en los
+diferentes periodos, dejando expuesto cuantos participan individualmente, en
+colaboración de a 2 autores, o más. Este análisis es útil para evaluar si existen
+tendencias de mayor trabajo en equipo a lo largo del tiempo.
+
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+formas_autoria <- autores_articulos %>% 
+    count(articulo_id,anio,name = "cant_autores") %>% 
+    count(anio,cant_autores ,name="cant_articulos_con_autores") %>% 
+    arrange(anio,desc(cant_articulos_con_autores)) %>% 
+    mutate(cant_autores_bins= case_when(
+        cant_autores==1 ~ '1',
+        (cant_autores >= 2 & cant_autores <= 4) ~ '2 a 4',
+        (cant_autores >= 5 & cant_autores <= 7) ~ '5 a 7',
+        cant_autores >= 8 ~ '8 o +'
+        ))
+
+formas_autoria %>% 
+    mutate(anio=as.factor(anio)) %>% 
+    # mutate(cant_articulos_con_autores=as.factor(cant_articulos_con_autores)) %>% 
+    # mutate(cant_autores=as.factor(cant_autores)) %>% 
+    ggplot(aes(x= anio,y=cant_autores,fill=cant_articulos_con_autores))+
+    geom_col()+
+    theme_light()+
+    # scale_fill_discrete()+
+    theme(axis.text.x = element_text(angle = 45,hjust = 1))
+# autores_articulos %>% 
+#     count(articulo_id,anio,name = "cant_autores",sort=TRUE)
+
+
+formas_autoria %>% 
+    mutate(anio=as.factor(anio)) %>% 
+    # mutate(cant_articulos_con_autores=as.factor(cant_articulos_con_autores)) %>% 
+    # mutate(cant_autores=as.factor(cant_autores)) %>%
+    # ggplot(aes(x=anio,y=cant_articulos_con_autores,fill=cant_autores,label=cant_autores))+
+    ggplot(aes(x=anio,y=cant_autores,
+               fill=cant_articulos_con_autores,label=cant_articulos_con_autores))+
+    geom_tile()+
+    geom_text()+
+    theme_light()+
+    # scale_fill_brewer(palette='Spectral')+
+    scale_fill_distiller(palette = 'Spectral')+
+    scale_y_continuous(breaks = c(1:21))+
+    theme(axis.text.x = element_text(angle = 45,hjust = 1))
+
+formas_autoria %>% group_by(anio) %>% summarise(sum(cant_articulos_con_autores))
+
+formas_autoria %>% 
+    mutate(anio=as.factor(anio)) %>% 
+
+    ggplot(aes(x=anio,y=cant_articulos_con_autores,
+               fill=cant_autores_bins))+
+    geom_col()+
+    theme_light()+
+    # scale_fill_brewer(palette='Spectral')+
+    # scale_fill_distiller(palette = 'Spectral')+
+    scale_y_continuous(breaks = c(1:25))+
+    theme(axis.text.x = element_text(angle = 45,hjust = 1))+
+    labs(title='Cantidad de autores por artículo por año',
+         subtitle='solo trabajos originales',
+         x='',y='# articulos',fill='cant. autores\npor articulo' )
+
+```
+
+● Comparación con otras redes de coautoría realizadas en otros trabajos utilizando
+métricas que están presentes en todos ellos por ejemplo: (a) artículos por autor, (b)
+coeficiente de clustering (transitividad), (c) tamaño del componente principal, (d)
+componente principal representado en porcentaje, y (e) distancia media.
+
+```{r}
+comparacion_otros_papers <- tibble::tribble(
+                                            ~metricas,                                             ~paper_comparacion, ~metrica_valor,
+                                "artículos por autor",                           "Strategic management (Koseoglu 2016)",         "0.88",
+                               "autores por artículo",                           "Strategic management (Koseoglu 2016)",         "1.13",
+          "coeficiente de clustering (transitividad)",                           "Strategic management (Koseoglu 2016)",         "0.13",
+                    "tamaño del componente principal",                           "Strategic management (Koseoglu 2016)",          "296",
+    "componente principal representado en porcentaje",                           "Strategic management (Koseoglu 2016)",           "69",
+                                    "distancia media",                           "Strategic management (Koseoglu 2016)",         "5.05",
+                                "artículos por autor",               "Management and organization (Acedo et al.,2006a)",         "2.04",
+                               "autores por artículo",               "Management and organization (Acedo et al.,2006a)",         "1.88",
+          "coeficiente de clustering (transitividad)",               "Management and organization (Acedo et al.,2006a)",         "0.68",
+                    "tamaño del componente principal",               "Management and organization (Acedo et al.,2006a)",         "4625",
+    "componente principal representado en porcentaje",               "Management and organization (Acedo et al.,2006a)",         "45.4",
+                                    "distancia media",               "Management and organization (Acedo et al.,2006a)",            "-",
+                                "artículos por autor",                                     "Biomedical (Newman, 2001)",          "6.4",
+                               "autores por artículo",                                     "Biomedical (Newman, 2001)",         "3.75",
+          "coeficiente de clustering (transitividad)",                                     "Biomedical (Newman, 2001)",        "0.066",
+                    "tamaño del componente principal",                                     "Biomedical (Newman, 2001)",      "1395693",
+    "componente principal representado en porcentaje",                                     "Biomedical (Newman, 2001)",         "92.6",
+                                    "distancia media",                                     "Biomedical (Newman, 2001)",          "4.6",
+                                "artículos por autor",                      "Tourism and hospitality (Yeet al., 2013)",          "1.1",
+                               "autores por artículo",                      "Tourism and hospitality (Yeet al., 2013)",         "1.87",
+          "coeficiente de clustering (transitividad)",                      "Tourism and hospitality (Yeet al., 2013)",        "0.748",
+                    "tamaño del componente principal",                      "Tourism and hospitality (Yeet al., 2013)",         "1376",
+    "componente principal representado en porcentaje",                      "Tourism and hospitality (Yeet al., 2013)",         "59.3",
+                                    "distancia media",                      "Tourism and hospitality (Yeet al., 2013)",          "7.2",
+                                "artículos por autor",                               "Computer science (Newman, 2001)",          "2.6",
+                               "autores por artículo",                               "Computer science (Newman, 2001)",         "2.22",
+          "coeficiente de clustering (transitividad)",                               "Computer science (Newman, 2001)",        "0.496",
+                    "tamaño del componente principal",                               "Computer science (Newman, 2001)",         "6396",
+    "componente principal representado en porcentaje",                               "Computer science (Newman, 2001)",         "57.2",
+                                    "distancia media",                               "Computer science (Newman, 2001)",          "9.7",
+                                "artículos por autor", "Revista Argentina de Antropología Biológica (este estudio)",         "2.14",
+                               "autores por artículo", "Revista Argentina de Antropología Biológica (este estudio)",         "3.68",
+          "coeficiente de clustering (transitividad)", "Revista Argentina de Antropología Biológica (este estudio)",        "0.543",
+                    "tamaño del componente principal", "Revista Argentina de Antropología Biológica (este estudio)",          "197",
+    "componente principal representado en porcentaje", "Revista Argentina de Antropología Biológica (este estudio)",        "67.01",
+                                    "distancia media", "Revista Argentina de Antropología Biológica (este estudio)",         "3.41"
+    )
+
+
+comparacion_otros_papers %>% 
+    tidyr::spread(key = paper_comparacion,value=metrica_valor)
+
+ write.table(
+ comparacion_otros_papers %>% 
+     tidyr::spread(key = paper_comparacion,value=metrica_valor),file = "export_comparacion.txt",row.names = FALSE,sep = "\t",fileEncoding = "UTF-8")
+
+```
+

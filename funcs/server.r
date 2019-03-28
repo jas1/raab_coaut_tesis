@@ -715,7 +715,7 @@ server <- function(input, output,session) {
     })
     
     
-    # estetico # 4: COMUNIDADES  #-----------------------------------------------------------------------------------------------
+    # estatico # 4: COMUNIDADES  #-----------------------------------------------------------------------------------------------
     observe({
         req(input$input_static_periodos)
         req(input$comunidades_sel_algo)
@@ -909,7 +909,7 @@ server <- function(input, output,session) {
             write.csv(com_reactive_to_csv, file,row.names = FALSE)
         })
     
-    # temporal #-----------------------------------------------------------------------------------------------
+    # TEMPORAL #-----------------------------------------------------------------------------------------------
     
     temporal_estructuras_reactive_vars <- reactive({
         ret <- estructura_red_vars_compara_simu_list

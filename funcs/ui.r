@@ -259,7 +259,7 @@ body <- dashboardBody(
                                                               "Para ver los artículos asociados, debe seleccionar al menos un Período.")
                                              
                                     ),
-                                    # --- UI : Panel principal : estructura de red  ------------------
+# --- UI : Panel principal : estructura de red  ------------------
                                     tabPanel("Estructura Red", 
                                              
                                              conditionalPanel('input.input_static_periodos != null',
@@ -305,32 +305,22 @@ bs_set_opts(panel_type = "info") %>%
         subgrafos_ui("estr_componentes")
         
         
-    )) %>% 
-                                                                  
-# simulacion similares ----------------------------------------------------
-    bs_set_opts(panel_type = "info") %>%
-    bs_append(title = "Comparación con modelos" , # "Analisis de Mundo pequeño y Libre Escala"
-            content = div( 
-                
-                estructura_modelos_ui("modelos")
-                
-                # p('comparación contra 1000 grafos random con estructura similar'), 
-                # selectizeInput(inputId = "input_static_simulacion_sel_variable", label = "Variable", choices = '',
-                #                           options = list(
-                #                               placeholder = 'Seleccionar Variable',
-                #                               onInitialize = I('function() { this.setValue(""); }')),
-                #                           multiple = FALSE),
-                # conditionalPanel('input.input_static_simulacion_sel_variable != null && input.input_static_simulacion_sel_variable!= "" ',
-                #                  plotlyOutput('output_static_estructura_red_simulacion_comparativa')
-                #            )# fin conditional panel de selected variable
-            )# fin div de mundo pequeño append
-            )# fin bs_append de mundo pequeño 
+    )) #%>% 
+
                                              ),
                                              conditionalPanel('input.input_static_periodos == null',
                                                               "Para ver la estructura, debe seleccionar al menos un Período.")
                                              
                                     ),
-                                    # --- UI : Panel principal : Comunidades  ------------------
+# --- UI : Panel principal : Comparacion de modelos  ------------------
+tabPanel("Comparación con modelos", 
+         br(),
+         # simulacion similares ----------------------------------------------------
+
+           estructura_modelos_ui("modelos")
+
+         ),
+# --- UI : Panel principal : Comunidades  ------------------
                                     tabPanel("Comunidades", 
                                              br(),
                                              conditionalPanel('input.comunidades_sel_algo != null && input.comunidades_sel_algo!= "" ',
@@ -401,7 +391,7 @@ bs_set_opts(panel_type = "info") %>%
                 )# fin fluid page
         ),# fin tab estatico
         
-        # TAB TEMPORAL --------------------------------------------------------------------------
+# TAB TEMPORAL --------------------------------------------------------------------------
         tabItem(tabName = "tab_analisis_temporal",
                 textInput("temporal_semilla_seed", label = p("Semilla"), value = "12345"),
                 p("Las operacionres realizadas en cada seccion temporal pueden demorar bastante tiempo. ( hasta 5 mins aprox. )"),

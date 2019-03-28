@@ -15,6 +15,25 @@ testthat::test_that(
         gb_ok <- armado_grafo_bipartito(art_full)
         g_aut <- extraccion_grafo_coautoria(gb_ok,art_full,width_multiplier = 3)
         
+        # esto fue par ala escritura de tesis para ver los tributos y hacer ejemplos
+        # igraph::vertex_attr_names(g_aut)
+        # igraph::vertex_attr(g_aut,index = 10)
+        # igraph::edge_attr_names(g_aut)
+        # igraph::edge_attr(g_aut,index = "a0187--a0208" )
+        # igraph::edge_attr(g_aut,name = "id" )
+        # igraph::edge_attr(g_aut,)
+        # E(g_aut)[1]$weight
+        # E(g_aut)[1]$id
+        # E(g_aut)[10]$fuerza_colaboracion
+        # E(g_aut)$anios %>% as_tibble() %>% filter(str_length(value)>7)
+        # E(g_aut)[1]$autores
+        # E(g_aut)[1]$autor1_label
+        # E(g_aut)[1]$autor2_label
+        # E(g_aut)[1]$color
+        # E(g_aut)[1]$width
+        # V(g_aut)[str_detect(V(g_aut)$label,"Carne")]$size
+        
+        
         # small world
         
         # extraido de: SAND csardi 2016
@@ -46,6 +65,9 @@ testthat::test_that(
         average.path.length(g_aut) # 3.410348
         
         valores_para_red <- calcular_metricas(g_aut)
+        
+        simulaciones_to_resumen_ejecucion
+        simular_random(iter=100,vertex_count=10, edge_count=40,semilla=12345)
         
         # FIT POWERLAW ------------------------------------------------------------
         
@@ -103,14 +125,43 @@ testthat::test_that(
         # - la simulacion random
         # - la simulacion SW
         # - la simulacion scale freen
-        # FALTA 
-        # - comparacion dentro de aplicacion
-            # - tal vez un shiny module para la parte de simulaciones
-            # - un tab por cada tipo de simulacion
-            # - arriba los valores de referencia de " current network "
-            # - que le puedas configurar los parametros a cada simulacion
-            # - que los valores default sean los de la red
-            # - recordatorio de porque esos valores para que el usuario entienda
-            # - y yo me acuerde ! xD 
+        
+        # como validar smallworld
+        
+#        https://stats.stackexchange.com/questions/175492/how-to-test-statistically-whether-my-network-graph-is-a-small-world-network
+        
 
+        
+        valores_para_red <- calcular_metricas(g_aut)
+        param_list <- data.frame(param_iter=1000,
+                                 param_vertex_count=vcount(g_aut),
+                                 param_edge_count=ecount(g_aut),
+                                 param_semilla=12345)
+        simulacion_random <- simular_random(iter=param_list$param_iter,
+                                            vertex_count=param_list$param_vertex_count,
+                                            edge_count=param_list$param_edge_count,
+                                            semilla=param_list$param_semilla)
+        
+        simulaciones_resumen <- simulaciones_to_resumen_ejecucion(simulacion_random,param_list)
+        
+        validar_small_world <- function(valores_para_red,
+                                        param_list,
+                                        simulacion_random,
+                                        simulaciones_resumen){
+
+            #λ:=L/Lr. and γ:=C/Cr.
+            delta_net <- valores_para_red$avg_path / simulaciones_resumen$mean_avg_path_length
+            gamma_net <- valores_para_red$transitivity / simulaciones_resumen$mean_transitivity
+            
+            es_small_world <- round(delta_net) == 1  &  gamma_net > 1            
+            
+            qgraph::smallworldness(g_aut)
+        }
+        
+
+        # como validar scale free
+        
+        
+        
+        
     })

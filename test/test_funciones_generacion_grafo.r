@@ -345,6 +345,70 @@ test_that(
 )
 
 
+test_that::test_that(
+    "grafo: bipartito show",
+    {
+        library(here)
+        source(here:::here("funcs","imports.r"),encoding = "UTF-8") # asi toma la ultima version
+        source(here:::here("funcs","funciones.r"),encoding = "UTF-8") # asi toma la ultima version
+        
+        # setup        
+        cota_seccion <- c("Trabajos Originales")
+        db_limpia <- "db_raab_grafos.sqlite"
+        cota_anio <-  c(1996:2016)
+        data_acotado <- articulos_todos_grafo(db_limpia,anios = cota_anio,secciones = cota_seccion)
+        
+        g_aut_art <- igraph:::graph.data.frame(data_acotado,directed = FALSE)
+        
+        g_aut_art <- transformar_en_bipartito(g_aut_art,data_acotado)
+        
+        # voy a agarrar un componente mediano: 
+        #
+        autor_en_componente <- "Noemí Estela Acreche"
+        autor_id <- data_acotado %>% 
+            count(aut_id,autor) %>% 
+            filter(autor == autor_en_componente) %>% 
+            pull(aut_id)
+        
+        # agrego componente a los vertices
+        set.seed(12345)
+        V(g_aut_art)$componente <- igraph::components(g_aut_art)$membership
+        
+
+        
+          
+          class(vertice_autor)
+          attributes(vertice_autor)
+        
+        subgrafos_componentes <- igraph::decompose.graph(g_aut_art)
+        
+        compos_filtered <- map(seq(length(subgrafos_componentes)),function(x){
+            tmp_g_0 <- subgrafos_componentes[[x]]
+            tmp_g <- tmp_g_0
+            vertice_autor <- V(tmp_g)[V(tmp_g)$name == autor_id]
+            
+            # print(vertice_autor)
+
+            if (length(attr(vertice_autor,"names"))!=0 ) {
+                tmp_g
+            }else{
+                tmp_g <- NULL
+                # message("no se encuentra")
+            }
+            tmp_g
+        })
+        
+        any(compos_filtered)
+         
+        subrafo_componente_autor <- compos_filtered[!is.null(unlist(compos_filtered))]
+        
+        subrafo_componente_autor %>% subgraph()
+            add_layout_(as_bipartite()) %>%
+            plot()
+        
+})
+
+
 
 
 # fuerza_colaboracion_autorut_expected_validator("Hayes",art_full,gb_ok)

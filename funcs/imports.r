@@ -11,6 +11,8 @@ library(DBI)#install.packages("DBI")
 library(igraph)#install.packages("igraph")
 library(ggplot2)#install.packages("ggplot2")
 # library(ggraph)#install.packages("ggraph")
+library(qgraph)#install.packages("qgraph")
+ 
 library(RColorBrewer)#install.packages("RColorBrewer")
 library(visNetwork)#install.packages("visNetwork")
 library(shiny)# install.packages("shiny")
@@ -29,6 +31,19 @@ library(visdat)#install.packages("visdat")
 library(ggridges)#install.packages("ggridges")
 library(skimr)#install.packages("skimr")
 library(ggrepel)#install.packages("ggrepel")
+
+# install.packages("survival")
+# install.packages("cluster")
+# install.packages("rpart")
+# install.packages("Hmisc")
+# install.packages("qgraph")
+# install.packages("ggridges")
+
+
+
+
+
+
 
 # https://github.com/timelyportfolio/RBioFabric/issues/1
 library(Rcpp)#install.packages("Rcpp")

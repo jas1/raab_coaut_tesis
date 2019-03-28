@@ -1,0 +1,7 @@
+"metricas"	"Biomedical (Newman, 2001)"	"Computer science (Newman, 2001)"	"Management and organization (Acedo et al.,2006a)"	"Revista Argentina de Antropología Biológica (este estudio)"	"Strategic management (Koseoglu 2016)"	"Tourism and hospitality (Yeet al., 2013)"
+"artículos por autor"	"6.4"	"2.6"	"2.04"	"2.14"	"0.88"	"1.1"
+"autores por artículo"	"3.75"	"2.22"	"1.88"	"3.68"	"1.13"	"1.87"
+"coeficiente de clustering (transitividad)"	"0.066"	"0.496"	"0.68"	"0.543"	"0.13"	"0.748"
+"componente principal representado en porcentaje"	"92.6"	"57.2"	"45.4"	"67.01"	"69"	"59.3"
+"distancia media"	"4.6"	"9.7"	"-"	"3.41"	"5.05"	"7.2"
+"tamaño del componente principal"	"1395693"	"6396"	"4625"	"197"	"296"	"1376"
