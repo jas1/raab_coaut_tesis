@@ -124,25 +124,28 @@ estructura_nodos_server <- function(input, output, session, # parametros de shin
 
     estructura_red_grafo_dt <- reactive({
         
+        nodos_reactive_renamed <- est_nodos_list_reactive() %>% 
+                rename('Autor' = autor,
+                       'Grado' = degree,
+                       'Intermediación' = betweeness,
+                       'Centrarlidad Autovector' = eigen_centrality,
+                       'Cercanía' = closeness,
+                       'Page Rank' = page_rank,
+                       '# Triángulos' = count_triangles,
+                       'Fuerza Colaboración' = fuerza_colaboracion)
+        
         dt_return <- DT::datatable(options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')),
-                                   est_nodos_list_reactive(),
+                                   nodos_reactive_renamed,
                                    escape = FALSE,
                                    rownames = FALSE,
                                    selection = 'none') %>%
-            formatRound('betweeness',4) %>%
-            formatRound('eigen_centrality',4) %>%
-            formatRound('closeness',7) %>%
-            formatRound('page_rank',4) %>%
-            formatRound('fuerza_colaboracion',4) 
+            formatRound('Intermediación',4) %>%
+            formatRound('Centrarlidad Autovector',4) %>%
+            formatRound('Cercanía',7) %>%
+            formatRound('Page Rank',4) %>%
+            formatRound('Fuerza Colaboración',4) 
         
-        #     rename('Autor' = autor,
-        #            'Grado' = degree,
-        #            'Betweeness' = betweeness,
-        #            'Eigen Centrality' = eigen_centrality,
-        #            'Closeness' = closeness,
-        #            'Page Rank' = page_rank,
-        #            '# Triangulos' = count_triangles,
-        #            'Fuerza Colaboración' = fuerza_colaboracion)
+
         
         dt_return
     })
