@@ -197,6 +197,36 @@ estructura_red_nodos_vars_compara_simu_list <- estructura_red_nodos_vars_compara
 names(estructura_red_nodos_vars_compara_simu_list) <- estructura_red_nodos_vars_compara_simu_DF %>% pull(ES)
 
 
+# DEFINICION VARS MODELADO ------------------------------------------------
+
+
+# DEFINICION VARS ESTRUCTURA DE RED - NODOS ----------------------------------------
+
+modelado_df_vars <- data.frame(stringsAsFactors = FALSE,
+                                                        var_name=c('transitivity',
+                                                                   'diameter',
+                                                                   'avg_path',
+                                                                   'pow_law_alpha',
+                                                                   'pow_law_ks_p'),
+                                                        ES=c('Transitividad',
+                                                             'Diámetro',
+                                                             'Dist. Camino medio',
+                                                             'Ley Pot. Alfa',
+                                                             'Ley Pot. Signif. Test KS'),
+                                                        EN=c('Transitivity',
+                                                             'Diameter',
+                                                             'Average path lenght',
+                                                             'Power Law Alpha',
+                                                             'Power Law KS test Significance')
+) %>% 
+    mutate(name = paste0(ES,"(",EN,")"),
+           value = var_name) %>% as_tibble()
+
+modelado_df_vars_list <- modelado_df_vars %>% pull(value)
+names(modelado_df_vars_list) <- modelado_df_vars %>% pull(ES)
+
+
+
 # GLOBALS: PARA SHINY ---------------------------------------------------------------
 side_lay_width <- 3
 main_lay_width <- 12 - side_lay_width

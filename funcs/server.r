@@ -641,7 +641,8 @@ server <- function(input, output,session) {
     observeEvent(input$input_static_periodos,{
         
         callModule(estructura_modelos_server, "modelos",
-                   static_network_grafo_reactive() # parametros del componente: grafo # parametros del componente: base articulos
+                   static_network_grafo_reactive(), # parametros del componente: grafo # parametros del componente: base articulos
+                   modelado_df_vars_list # listado de variables para la seleccion en histogramas.
         )
     })
     
@@ -1167,16 +1168,19 @@ server <- function(input, output,session) {
             top_5 <- estr_grafos_2 %>% 
                 group_by(periodo) %>%
                 top_n(n = input$top_n_periodos,wt=Valor ) %>%
-                arrange(periodo,desc(Valor))
-            
+                # arrange(periodo,desc(Valor))
+                ungroup() %>% 
+                mutate(autor=fct_reorder(autor,Valor))
             incProgress(indice/n, detail = paste("Procesando visualización ...", indice)) # 4
             indice <- indice+1
             
             
             plot_out <- top_5 %>% ggplot(aes(x=periodo, 
-                                             y=reorder(autor,Valor),
+                                             # y=reorder(autor,Valor),
+                                             y=autor,
                                              color=Valor)) +
-                geom_point() + 
+                geom_point(size=1,color='black',alpha=0.95) + 
+                geom_point(size=0.75) +
                 xlab("Periodo") + ylab("Autor")+
                 # scale_colour_gradient(low = "#a6bddb", high = "#034e7b") +
                 scale_colour_gradient(low = "#d9edf7", high = "#2c7fb8") + 

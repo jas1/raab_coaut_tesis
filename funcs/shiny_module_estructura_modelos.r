@@ -31,7 +31,7 @@ estructura_modelos_ui <- function(id, # escencial para poder armar el componente
                         tabPanel("Red aleatoria",div(
                             br(),
                             div(
-                                p("Para la ejecución de una red aleatoria se usa el modelo de Erdos-Renyi basado en nodos y vertices.")
+                                p("Para la ejecución de una red aleatoria se usa el modelo de Erdos-Renyi basado en nodos y aristas.")
                             ),# fin div disclaimer
                             br(),
                             bs_accordion(id = ns("modelo_random_accordeon")) %>%
@@ -228,7 +228,8 @@ estructura_modelos_ui <- function(id, # escencial para poder armar el componente
 
 
 estructura_modelos_server <- function(input, output, session, # parametros de shiny
-                                    current_grafo#, # grafo actual
+                                    current_grafo,#, # grafo actual
+                                    model_list_global_vars # variable global lista para selecciones
 ) {
 
     
@@ -310,7 +311,8 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
     modelo_random_histo_vars_opts_reactive <- reactive({
         # no toma globales, hay que pasarlo por parametro
         # ret <- estructura_red_nodos_vars_compara_simu_list # es global
-        ret <- colnames(valores_para_red_reactive())
+        # ret <- colnames(valores_para_red_reactive())
+        ret <- model_list_global_vars
         # ret <- listado_variables_seleccion
         ret 
     })
@@ -344,21 +346,28 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
             tidyr::gather(metrica,valor) %>% 
             filter(metrica==metrica_seleccionada)
         
-        pl <- data_red %>% ggplot(aes(valor)) +
+        pl_to_build <- data_red %>% ggplot(aes(valor)) +
             geom_histogram()+ 
             geom_vline(data=data_current,
                        aes(xintercept=valor,colour="red"),
                        show.legend = FALSE) + 
-            geom_text(data=data_current, 
-                      aes(x=valor, 
-                          label=paste0(metrica_seleccionada," de la red: ",round(valor,5),"\n"), 
-                          y=20), 
-                      colour="red", angle=90, 
-                      text=element_text(size=11))+
             labs(title=paste0("Histograma de ",metrica_seleccionada),
                  x= metrica_seleccionada,
                  y= "cantidad de simulaciones")+
             theme_light()
+        
+        pl_df <- ggplot_build(pl_to_build)
+        y_scale <- pl_df$layout$panel_scales_y[[1]]  # Extrae la escala en y
+        y_limits <- y_scale$get_limits()   # Se fija los límites
+        y_mid <- max(y_limits)/2           # Agarra el punto medio.
+
+        pl <- pl_to_build+geom_text(data=data_current, 
+                  aes(x=valor, 
+                      label=paste0(metrica_seleccionada,": ",round(valor,5),"\n"), 
+                      y=y_mid), 
+                  colour="red", 
+                  angle=90)
+        
         # ggplotly(pl)
         pl
         
@@ -410,7 +419,8 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
     modelo_sw_histo_vars_opts_reactive <- reactive({
         # no toma globales, hay que pasarlo por parametro
         # ret <- estructura_red_nodos_vars_compara_simu_list # es global
-        ret <- colnames(valores_para_red_reactive())
+        # ret <- colnames(valores_para_red_reactive())
+        ret <- model_list_global_vars
         # ret <- listado_variables_seleccion
         ret 
     })
@@ -460,21 +470,27 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
             tidyr::gather(metrica,valor) %>% 
             filter(metrica==metrica_seleccionada)
         
-        pl <- data_red %>% ggplot(aes(valor)) +
+        pl_to_build <- data_red %>% ggplot(aes(valor)) +
             geom_histogram()+ 
             geom_vline(data=data_current,
                        aes(xintercept=valor,colour="red"),
                        show.legend = FALSE) + 
-            geom_text(data=data_current, 
-                      aes(x=valor, 
-                          label=paste0(metrica_seleccionada," de la red: ",round(valor,5),"\n"), 
-                          y=20), 
-                      colour="red", angle=90, 
-                      text=element_text(size=11))+
             labs(title=paste0("Histograma de ",metrica_seleccionada),
                  x= metrica_seleccionada,
                  y= "cantidad de simulaciones")+
             theme_light()
+        
+        pl_df <- ggplot_build(pl_to_build)
+        y_scale <- pl_df$layout$panel_scales_y[[1]]  # Extrae la escala en y
+        y_limits <- y_scale$get_limits()   # Se fija los límites
+        y_mid <- max(y_limits)/2           # Agarra el punto medio.
+        
+        pl <- pl_to_build+geom_text(data=data_current, 
+                                    aes(x=valor, 
+                                        label=paste0(metrica_seleccionada,": ",round(valor,5),"\n"), 
+                                        y=y_mid), 
+                                    colour="red", 
+                                    angle=90)
         # ggplotly(pl)
         pl
         
@@ -520,7 +536,8 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
     modelo_ba_histo_vars_opts_reactive <- reactive({
         # no toma globales, hay que pasarlo por parametro
         # ret <- estructura_red_nodos_vars_compara_simu_list # es global
-        ret <- colnames(valores_para_red_reactive())
+        # ret <- colnames(valores_para_red_reactive())
+        ret <- model_list_global_vars
         # ret <- listado_variables_seleccion
         ret 
     })
@@ -571,21 +588,27 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
              tidyr::gather(metrica,valor) %>% 
              filter(metrica==metrica_seleccionada)
          
-         pl <- data_red %>% ggplot(aes(valor)) +
+         pl_to_build <- data_red %>% ggplot(aes(valor)) +
              geom_histogram()+ 
              geom_vline(data=data_current,
                         aes(xintercept=valor,colour="red"),
                         show.legend = FALSE) + 
-             geom_text(data=data_current, 
-                       aes(x=valor, 
-                           label=paste0(metrica_seleccionada," de la red: ",round(valor,5),"\n"), 
-                           y=20), 
-                       colour="red", angle=90, 
-                       text=element_text(size=11))+
              labs(title=paste0("Histograma de ",metrica_seleccionada),
                   x= metrica_seleccionada,
                   y= "cantidad de simulaciones")+
              theme_light()
+         
+         pl_df <- ggplot_build(pl_to_build)
+         y_scale <- pl_df$layout$panel_scales_y[[1]]  # Extrae la escala en y
+         y_limits <- y_scale$get_limits()   # Se fija los límites
+         y_mid <- max(y_limits)/2           # Agarra el punto medio.
+         
+         pl <- pl_to_build+geom_text(data=data_current, 
+                                     aes(x=valor, 
+                                         label=paste0(metrica_seleccionada,": ",round(valor,5),"\n"), 
+                                         y=y_mid), 
+                                     colour="red", 
+                                     angle=90)
          # ggplotly(pl)
          pl
          

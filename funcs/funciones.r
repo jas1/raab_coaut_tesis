@@ -622,11 +622,16 @@ calcular_estructura_sobre_grafo <- function(grafo_reactive_tmp){
     #resultado$str_dist_lejanos_2 <- names(mas_lejanos$vertice[2])
     
     #resultado$diametro_participantes <- igraph::get_diameter(grafo_reactive_tmp) %>% names() %>%paste0(collapse='; ')
-    
+    # te devuelve los nombres de los participantes del clique mas grande.
     largest_clique_str <- igraph::largest_cliques(grafo_reactive_tmp) %>% unlist() %>% names()
     
+    # cuantos autores hay en el clique mas grandes
     resultado$num_largest_cliques <- length(largest_clique_str )
+    
+    # quienes son los que estan en el clique mas grande.
     #resultado$str_largest_cliques <- largest_clique_str  %>%paste0(collapse='; ')
+    
+    # porcentaje de la red que representa el clique mas grande.
     resultado$porc_largest_cliques <- resultado$num_largest_cliques / resultado$cant_autores * 100 
     
     resultado$num_cliques <- igraph::clique_num(grafo_reactive_tmp)
