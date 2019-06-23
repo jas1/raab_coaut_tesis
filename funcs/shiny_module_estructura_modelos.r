@@ -205,9 +205,30 @@ estructura_modelos_ui <- function(id, # escencial para poder armar el componente
                             
                             conditionalPanel("input.random_param_update",
                                              div(
-                                                 p("para validar small world se tomo el criterio de comparar la red actual contra redes aleatorias ( lo seleccionado en el tab de Modelos / Aleatorio). "),
-                                                 p("la comparacion se lleva a cabo en el promedio del camino mas corto VS la media del promedio del camino mas corto de las N redes simuladas."),
-                                                 uiOutput(ns("small_world"))                                                 
+# UI - small world - Parametros -------------------------------------------
+
+                                                 bs_accordion(id = ns("small_world_verificacion")) %>%
+                                                     bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+                                                     bs_append(title = "Parametros", content = div(
+                                                         uiOutput(ns("small_world_params"))
+                                                     )) %>%
+# UI - small world - Verificacion 1 -------------------------------------------
+                                                     bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+                                                     bs_append(title = "Verificacion 1", content = div(
+                                                         uiOutput(ns("small_world_validacion_1"))
+                                                     )) %>%
+# UI - small world - Verificacion 2 -------------------------------------------
+                                                    bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+                                                    bs_append(title = "Verificacion 2", content = div(
+                                                        uiOutput(ns("small_world_validacion_2"))
+                                                    )) %>%
+# UI - small world - Comparacion -------------------------------------------
+                                                    bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+                                                    bs_append(title = "Comparacion 1", content = div(
+                                                        uiOutput(ns("small_world_comparacion_valores_validaciones"))
+                                                    ))
+                                                 
+                                                 # uiOutput(ns("small_world"))                                                 
                                              ),ns=ns),
                             conditionalPanel("!input.random_param_update",
                                              div(
@@ -639,6 +660,139 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
              selection = 'none')
      })
 # SERVER - SMALL WORLD ---------------------------------------------------------------
+
+
+# SERVER - SMALL WORLD - DATOS ------------------------------------------
+
+     small_world_reactive_data <- reactive({
+         req(input$random_param_update)
+         valores_para_red <- valores_para_red_reactive()
+         params <-  modelo_random_params_reactive()
+         simulaciones_resumen_random <- modelo_random_resumen_reactive()
+         
+         param_long <- params %>% 
+             tidyr::gather(parametro,valor) %>% 
+             as_tibble() 
+         # texto_params <-param_long %>% mutate(texto = paste("<p><strong>",str_replace(parametro,"param_",""),"</strong>",valor,"</p>")) %>% pull(texto) %>% paste(collapse = "\n")
+         
+         delta_net <- valores_para_red$avg_path / simulaciones_resumen_random$mean_avg_path_length
+         gamma_net <- valores_para_red$transitivity / simulaciones_resumen_random$mean_transitivity
+         
+         es_small_world <- round(delta_net) == 1  &  gamma_net > 1 
+         
+         paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
+         
+         smallworldness_grafo <- qgraph::smallworldness(current_grafo)
+         es_mayor_a_1 <- smallworldness_grafo > 1
+         es_mayor_a_3 <- smallworldness_grafo > 3
+         parametros_sw <- paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
+         
+         ret_list <- list('parametros_sw'=parametros_sw,
+                          'delta_net'=delta_net,
+                          'gamma_net'=gamma_net,
+                          'es_small_world'=es_small_world,
+                          'smallworldness_grafo'=smallworldness_grafo,
+                          'es_mayor_a_1'=es_mayor_a_1,
+                          'es_mayor_a_3'=es_mayor_a_3,
+                          'valores_para_red'=valores_para_red,
+                          'simulaciones_resumen_random'=simulaciones_resumen_random)
+         ret_list
+         
+     })
+     
+# SERVER - SMALL WORLD - Parametros ------------------------------------------
+     
+     output$small_world_params <- renderUI({
+         resultado <- div(
+             p("comparado con los parametros de simulación aleatoria: "),
+             # p(a("para recordar",href="https://stats.stackexchange.com/questions/175492/how-to-test-statistically-whether-my-network-graph-is-a-small-world-network")),
+             p("(",em("se sugiere configurar el modelo en Modelos: Red aleatoria"),")"),
+             br(),
+             div(small_world_reactive_data()$parametros_sw),
+             br())
+         resultado
+     })
+     
+# SERVER - SMALL WORLD - validacion 1 ------------------------------------------
+     
+     output$small_world_validacion_1 <- renderUI({
+         resultado <- div(
+             h2("Validación 1:"),
+             p("para validar small world se tomo el criterio de comparar la red actual contra redes aleatorias ( lo seleccionado en el tab de Modelos / Aleatorio). "),
+             p("la comparacion se lleva a cabo en el promedio del camino mas corto VS la media del promedio del camino mas corto de las N redes simuladas."),             
+             p("para mas detalles ver: Bialonski (2010) donde se detalla el procedimiento."),
+             p(strong("Mundo pequeño: ")," si Delta ~=1 y Gamma > 1"),
+             p(strong('Delta = '),'L/Lr. y ',strong('Gamma = '),"C/Cr."),
+             p("L: promedio camino mas corto "),
+             p("Lr: promedio de promedio camino mas corto de las simulaciones"),
+             p("C: transitivity "),
+             p("Cr: promedio de transitivity de las simulaciones"),
+             p(strong("Delta: "),small_world_reactive_data()$delta_net),
+             p(strong("Gamma: "),small_world_reactive_data()$gamma_net),
+             p(strong("Es mundo pequeño: "),if_else(small_world_reactive_data()$es_small_world,"SI","NO")),
+             br())
+         resultado
+     })
+     
+# SERVER - SMALL WORLD - Validacion 2 ------------------------------------------
+     
+     output$small_world_validacion_2 <- renderUI({
+         resultado <- div(
+             h2("Validación 2: "),
+             p("Una red puede ser considerada 'mundo pequeño ' si la 'smallworldness' es mayor a 1 ",a(href="https://www.rdocumentation.org/packages/qgraph/versions/1.5/topics/smallworldness","(qgraph::smallworldness)")),
+             p("Un punto de vista mas estricto dice de la red llevarla a 'smallworldness' >= 3 ",a(href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0002051","(Humphries & Gurney, 2008)")),
+             p("Para considerar una red  'mundo pequeño', Es sugerido inspeccionar transitivity substancialmente mas grande que las simulaciones aleatorias, "),
+             p("tambien que el el promedio distancia del camino mas corto es similar o mayor (pero no mucho mayor)"),
+             br(),
+             p(strong("smallworldness: "), small_world_reactive_data()$smallworldness_grafo["smallworldness"]),
+             p(strong("mayor a 1: "), if_else(small_world_reactive_data()$es_mayor_a_1,"SI","NO")),
+             p(strong("mayor a 3: "), if_else(small_world_reactive_data()$es_mayor_a_3,"SI","NO")),
+             br())
+         resultado
+     })
+     
+# SERVER - SMALL WORLD - comparacion validaciones ------------------------------------------
+     
+     output$small_world_comparacion_valores_validaciones <- renderUI({
+         
+         # medidas_a_mostrar <- data.frame('transitivity [red]'=c(small_world_reactive_data()$valores_para_red$transitivity,
+         #                                   small_world_reactive_data()$smallworldness_grafo["trans_target"]),
+         #            "transitivity [promedio simulaciones]"=c(small_world_reactive_data()$simulaciones_resumen_random$mean_transitivity,
+         #                                                     small_world_reactive_data()$smallworldness_grafo["trans_rnd_M"]),
+         #            'promedio distancia del camino mas corto [red]'=c(small_world_reactive_data()$valores_para_red$avg_path,
+         #                                                              small_world_reactive_data()$smallworldness_grafo["averagelength_target"]),
+         #            "promedio distancia del camino mas corto [promedio simulaciones]"=c(small_world_reactive_data()$simulaciones_resumen_random$mean_avg_path_length,
+         #                                                                                small_world_reactive_data()$smallworldness_grafo["averagelength_rnd_M"])
+         #            )
+         
+         # dataTableOutput(renderDataTable(datatable(medidas_a_mostrar)))
+         
+         
+         # medidas_a_mostrar
+         
+         resultado <- div(
+             p("Recordar que para validacion 2, se vuelven a ejecutar simulaciones."),
+             p("Sobre las simulaciones de validacion 1, se puede seleccionar como se ejecutan en detalle."),
+             p("Sobre las simulaciones de validacion 2, se puede seleccionar como se ejecutan en detalle."),
+             p(strong("para cada variable: "),'valor validacion 1','valor validacion 2'),
+             p(strong("transitivity [red]:"), small_world_reactive_data()$valores_para_red$transitivity,
+               " | ",small_world_reactive_data()$smallworldness_grafo["trans_target"]),
+             p(strong("transitivity [promedio simulaciones]:"),
+               small_world_reactive_data()$simulaciones_resumen_random$mean_transitivity,
+               " | ", small_world_reactive_data()$smallworldness_grafo["trans_rnd_M"] ),
+             br(),
+             # FIXME: revisar lo de smallworldness hasta donde debatirlo un poco.
+             p(strong("promedio distancia del camino mas corto [red]:"),
+               small_world_reactive_data()$valores_para_red$avg_path,
+               " | ",small_world_reactive_data()$smallworldness_grafo["averagelength_target"]),
+             p(strong("promedio distancia del camino mas corto [promedio simulaciones]:"),
+               small_world_reactive_data()$simulaciones_resumen_random$mean_avg_path_length,
+               " | ",small_world_reactive_data()$smallworldness_grafo["averagelength_rnd_M"] )
+         )
+         resultado
+     })
+
+     
      output$small_world <- renderUI({
          req(input$random_param_update)
          valores_para_red <- valores_para_red_reactive()
@@ -656,21 +810,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
          es_small_world <- round(delta_net) == 1  &  gamma_net > 1 
          
          paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
-         
-         # wasd <- for (row1 in seq_along(1:nrow(param_long))) {
-         #     p(strong(param_long[row1,1]),": ",param_long[row1,2])
-         #     paste0(param_long[row1,1]),": ",param_long[row1,2])
-         #     # print(row1$parametro)
-         #     # print(row1$valor)
-         # }
-         # tmp <- qgraph::smallworldness(g_aut)
-         # 
-         # sw_df <- data.frame(propiedad=tmp %>% names(),
-         #            valor=tmp,
-         #            stringsAsFactors = FALSE)
-         # sw_df %>% filter(propiedad=="smallworldness") %>% pull(valor)
 
-         
          smallworldness_grafo <- qgraph::smallworldness(current_grafo)
          es_mayor_a_1 <- smallworldness_grafo > 1
          es_mayor_a_3 <- smallworldness_grafo > 3
@@ -697,7 +837,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
              br(),
              h2("Validación 2: "),
              p("Una red puede ser considerada 'mundo pequeño ' si la 'smallworldness' es mayor a 1 ",a(href="https://www.rdocumentation.org/packages/qgraph/versions/1.5/topics/smallworldness","(qgraph::smallworldness)")),
-             p(" Un punto de vista mas estricto dice de la red llevarla a 'smallworldness' >= 3 ",a(href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0002051","(Humphries & Gurney, 2008)")),
+             p("Un punto de vista mas estricto dice de la red llevarla a 'smallworldness' >= 3 ",a(href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0002051","(Humphries & Gurney, 2008)")),
              p("Para considerar una red  'mundo pequeño', Es sugerido inspeccionar transitivity substancialmente mas grande que las simulaciones aleatorias, "),
              p("tambien que el el promedio distancia del camino mas corto es similar o mayor (pero no mucho mayor)"),
              br(),
@@ -710,11 +850,11 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
              br(),
              # FIXME: revisar lo de smallworldness hasta donde debatirlo un poco.
              p("promedio distancia del camino mas corto [red]:", valores_para_red$avg_path, " | ",smallworldness_grafo["averagelength_target"]),
-             p("promedio distancia del camino mas corto [promedio simulaciones]:", simulaciones_resumen_random$mean_avg_path_length, " | ",smallworldness_grafo["averagelength_rnd_M"] ),
+             p("promedio distancia del camino mas corto [promedio simulaciones]:", simulaciones_resumen_random$mean_avg_path_length, " | ",smallworldness_grafo["averagelength_rnd_M"] )#,
              
              
              # FIXME: SACAR ESTO:
-             p("otro para ver:", "SAND - 5.5.2 Assessing Small World Properties", "de csardi")
+             #p("otro para ver:", "SAND - 5.5.2 Assessing Small World Properties", "de csardi")
          )
          
          resultado
