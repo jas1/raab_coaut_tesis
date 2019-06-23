@@ -315,9 +315,9 @@ bs_set_opts(panel_type = "info") %>%
 # --- UI : Panel principal : Comparacion de modelos  ------------------
 tabPanel("Comparación con modelos", 
          br(),
-         # simulacion similares ----------------------------------------------------
+# simulacion similares ----------------------------------------------------
 
-           estructura_modelos_ui("modelos")
+         estructura_modelos_ui("modelos")
 
          ),
 # --- UI : Panel principal : Comunidades  ------------------
