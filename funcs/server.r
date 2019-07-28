@@ -3,7 +3,6 @@
 
 server <- function(input, output,session) {
     # generico menu messages -----------------------------------------------------------
-    
     output$msg_menu <- renderMenu({
         
         message_data <- data.frame(from=c("Julio"),message=c("Bienvenido al Análisis de la red de coaturía de la RAAB"))
@@ -734,6 +733,19 @@ server <- function(input, output,session) {
         req(input$comunidades_sel_algo)
         comunidad_sel_detalles <- arma_comunidad(input$semilla_seed,static_network_grafo_reactive(),input$comunidades_sel_algo)
     })
+
+    # comunidades - modulo ----------------------------------------------------
+
+    
+    observeEvent(input$comunidades_sel_algo,{
+        
+        callModule(comunidades_server, "comunidades_panel",
+                   static_network_grafo_reactive(), # parametros del componente: grafo
+                   static_data_base(), # parametros del componente: base articulos
+                   community_reactive()
+        )
+    })
+    
     
     # comunidades - resultado info ----------------------------------------------------------
     output$comunidades_result <- renderUI ({
@@ -945,13 +957,6 @@ server <- function(input, output,session) {
 
     # anios sin acumular
     temporal_basico_grafos_reactive <- reactive({
-        # temporal_grafos_reactive_acum()
-        # antes: input$anio, ahora: anios disponibles dataset
-        # global_periodos_disponibles
-        # listado_grafos <- map(global_periodos_disponibles, ~ grafo_para_periodo_x(.x,
-        #                                                                           cota_seccion,
-        #                                                                           db_limpia,
-        #                                                                           static_edge_width_multiplier)) 
         listado_grafos <- temporal_basico_grafos
         
         # semilla=input$temporal_semilla_seed
@@ -974,29 +979,7 @@ server <- function(input, output,session) {
             grafos <- temporal_basico_grafos_reactive()
             incProgress(indice/n, detail = paste("Calculando medidas ...", indice)) # 2
             indice <- indice+1
-            # calculo_grafos <- map(grafos,calcular_estructura_sobre_grafo)
-            # names(calculo_grafos) <- global_periodos_disponibles
-            # incProgress(indice/n, detail = paste("Armando estructura ...", indice)) # 3
-            # indice <- indice+1
-            # estr_grafos <- dplyr::bind_rows(calculo_grafos, .id = 'names') %>% rename(periodo=names)  
-            # 
-            # grafo_estr_as_stack <- estr_grafos %>% 
-            #     select(periodo,input$temporal_sel_vars) %>%
-            #     gather(key=metrica,value='valor',-periodo) %>%
-            #     left_join(temporal_estructuras_reactive_vars_tibble(),by=c("metrica"="value")) %>%
-            #     mutate(plot_text=paste0('Período: ',periodo,'<br />',
-            #                             'Métrica: ',nombre,'<br />',
-            #                             'Valor: ',valor)) %>%
-            #     rename(Periodo = periodo, 'Métrica' = nombre , Valor = valor )
-            # 
-            
-            # stack_filtrado <- temporal_basico_grafo_estr_as_stack %>% 
-            #     filter(metrica %in% input$temporal_sel_vars) %>%
-            #     rename(Periodo = periodo, 
-            #            'Métrica' = metrica , 
-            #            Valor = valor )
-            
-            # glimpse(grafo_estr_as_stack)
+
             incProgress(indice/n, detail = paste("Procesando visualización ...", indice)) # 4
             indice <- indice+1
             
@@ -1055,7 +1038,7 @@ server <- function(input, output,session) {
             write.csv(temporal_acumulado_estr_grafos, file,row.names = FALSE)
     })
     
-    # temporal - acumulado - output ----------------------------------------------
+# temporal - acumulado - output ----------------------------------------------
     output$temporal_grafos_plot_2 <- renderPlotly({
         # input$temporal_estructura_refrescar_boton
         # temporal_grafos_estr_plot
@@ -1066,25 +1049,7 @@ server <- function(input, output,session) {
             indice <- 1
             incProgress(indice/n, detail = paste("Armando grafos ...", indice)) #1 
             indice <- indice+1
-            # grafos <- temporal_grafos_acum_reactive()
-            # incProgress(indice/n, detail = paste("Calculando medidas ...", indice)) # 2
-            # indice <- indice+1
-            # calculo_grafos <- map(grafos,calcular_estructura_sobre_grafo)
-            # names(calculo_grafos) <- global_periodos_disponibles
-            # incProgress(indice/n, detail = paste("Armando estructura ...", indice)) # 3
-            # indice <- indice+1
-            # estr_grafos <- dplyr::bind_rows(calculo_grafos, .id = 'names') %>% rename(periodo=names)  
-            # # glimpse(estr_grafos)
-            # 
-            # grafo_estr_as_stack <- estr_grafos %>% 
-            #     select(periodo,input$temporal_sel_vars_2) %>%
-            #     gather(key=metrica,value='valor',-periodo) %>%
-            #     left_join(temporal_estructuras_reactive_vars_tibble(),by=c("metrica"="value")) %>%
-            #     mutate(plot_text=paste0('Período: ',periodo,'<br />',
-            #                             'Métrica: ',nombre,'<br />',
-            #                             'Valor: ',valor)) %>%
-            #     rename(Periodo = periodo, 'Métrica' = nombre , Valor = valor )
-            # # glimpse(grafo_estr_as_stack)
+
             incProgress(indice/n, detail = paste("Procesando visualización ...", indice)) # 4
             indice <- indice+1
             
@@ -1104,16 +1069,17 @@ server <- function(input, output,session) {
         ggplotly(plot_out,tooltip="text")
     })
     
-    # temporal - top N - acumulados --------------------------------------------
-    
-    
+# temporal - top N - acumulados --------------------------------------------
+
     observe({
         # req(input$anio)
         # input$temporal_estructura_refrescar_boton
         updateSelectizeInput(session, "temporal_sel_vars_3", choices = temporal_nodos_reactive_vars())
+        updateSelectizeInput(session, "temporal_sel_vars_anual", choices = temporal_nodos_reactive_vars())
+        
     })
     
-    # temporal - top N - acumulados - output -----------------------------------
+# temporal - top N - acumulados - output -----------------------------------
     
     temporal_grafos_top_n_acum_metricas_reactive <- reactive({
         
@@ -1125,6 +1091,22 @@ server <- function(input, output,session) {
         temporal_acumulado_nodos_grafos
         
     })
+
+# temporal - top n anual - download  ----------------------------------------------------
+
+    
+    output$download_temporal_grafos_top_n_anual <- downloadHandler( 
+        filename = paste('temp_grafos_top_n_anual-', Sys.Date(),'-', '.csv', sep=''), content = function(file) {
+            req(input$top_n_periodos_anual)
+            req(input$temporal_sel_vars_anual)
+            
+            resu <- temporal_grafos_top_n_anual_data_reactive()
+            #temporal_acumulado_estr_grafos
+            #temporal_basico_estr_grafos
+            write.csv(resu, file,row.names = FALSE)
+        })
+ 
+# temporal - top n total - download  ----------------------------------------------------
     
     output$download_temporal_grafos_top_n <- downloadHandler( 
         filename = paste('temp_grafos_top_n_-', Sys.Date(),'-', '.csv', sep=''), content = function(file) {
@@ -1133,10 +1115,40 @@ server <- function(input, output,session) {
             write.csv(temporal_grafos_top_n_acum_metricas_reactive(), file,row.names = FALSE)
     })
     
+    temporal_grafos_top_n_anual_data_reactive <- reactive({
+        req(input$top_n_periodos_anual)
+        req(input$temporal_sel_vars_anual)
+        
+        cant_n <- input$top_n_periodos_anual;
+        metrica_s <- input$temporal_sel_vars_anual;
+        metrica_sym <- rlang::sym(metrica_s) 
+        
+        resu <- temporal_acumulado_nodos_grafos %>% 
+            nest(-periodo) %>% 
+            mutate(top_n_periodo=purrr::map(data,
+                                            cant=cant_n,
+                                            metrica=metrica_s,
+                                            .f=function(d,metrica,cant){
+                                                metrica_sym <-rlang::sym(metrica_s)
+                                                ranking <- seq(from=1,to = cant,by = 1)
+                                                ret <- d %>% arrange(desc(!!metrica_sym)) %>% head(cant) %>% 
+                                                    mutate(posicion=ranking) %>% 
+                                                    mutate(valor_seleccion= !!metrica_sym)
+                                                ret
+                                            }))
+        
+        resu
+    })
+# temporal - top n anual - plot -------------------------------------------
     
-    output$temporal_grafos_top_n_acum <- renderPlotly({
-        # input$temporal_estructura_refrescar_boton
-        # temporal_grafos_estr_plot
+    output$temporal_grafos_top_n_anual <- renderPlotly({
+        req(input$top_n_periodos_anual)
+        req(input$temporal_sel_vars_anual)
+        
+        cant_n <- input$top_n_periodos_anual;
+        metrica_s <- input$temporal_sel_vars_anual;
+        metrica_sym <- rlang::sym(metrica_s) 
+        
         
         withProgress(message = 'Armando visualización ...', value = 0, {
             # Number of times we'll go through the loop
@@ -1153,10 +1165,51 @@ server <- function(input, output,session) {
             # estr_grafos <- dplyr::bind_rows(calculo_grafos, .id = 'names') %>% rename(periodo=names)
             # glimpse(estr_grafos)
             
-            # para_top_5 <- estr_grafos %>% gather(metrica,valor,-periodo,-autor)
             
-            # glimpse(para_top_5)
+            resu <- temporal_grafos_top_n_anual_data_reactive()
             
+ 
+            incProgress(indice/n, detail = paste("Armando Plot ...", indice)) # 3
+            indice <- indice+1
+            
+            plot_out <- resu %>% 
+                unnest(top_n_periodo) %>%
+                mutate(autor=fct_reorder(autor,posicion,.desc = TRUE)) %>% 
+                mutate(posicion=as.factor(posicion)) %>% 
+                ggplot(aes(x=periodo,y=autor,color=posicion,group=posicion,label=valor_seleccion))+
+                geom_point()+
+                geom_line(show.legend = FALSE)+
+                theme_light()+
+                theme(axis.text.x = element_text(angle = 90, hjust = 1),
+                      axis.text.y = element_text(size = 6))+
+                labs(x="",y="")
+        })
+        
+        
+        plotly::ggplotly(plot_out)
+    })
+    
+
+# temporal - top n total - plot -------------------------------------------
+
+ 
+    output$temporal_grafos_top_n_acum <- renderPlotly({
+        # input$temporal_estructura_refrescar_boton
+        # temporal_grafos_estr_plot
+        
+        withProgress(message = 'Armando visualización ...', value = 0, {
+            # Number of times we'll go through the loop
+            n <- 4
+            indice <- 1
+            incProgress(indice/n, detail = paste("Armando grafos ...", indice)) #1
+            indice <- indice+1
+            grafos <- temporal_grafos_acum_reactive()
+            incProgress(indice/n, detail = paste("Calculando medidas ...", indice)) # 2
+            indice <- indice+1
+            # calculo_grafos <- temporal_grafos_top_n_acum_metricas_reactive()
+            incProgress(indice/n, detail = paste("Armando estructura ...", indice)) # 3
+            indice <- indice+1
+
             var_selected <- input$temporal_sel_vars_3
             # glimpse(var_selected)
             
@@ -1181,7 +1234,7 @@ server <- function(input, output,session) {
                                              color=Valor)) +
                 geom_point(size=1,color='black',alpha=0.95) + 
                 geom_point(size=0.75) +
-                xlab("Periodo") + ylab("Autor")+
+                # xlab("Periodo") + ylab("Autor")+
                 # scale_colour_gradient(low = "#a6bddb", high = "#034e7b") +
                 scale_colour_gradient(low = "#d9edf7", high = "#2c7fb8") + 
                 theme_light()+

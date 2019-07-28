@@ -195,7 +195,7 @@ estructura_modelos_ui <- function(id, # escencial para poder armar el componente
         )) %>%  # fin div modelos / append
     # UI - Verificaciones ---------------------------------------------------------------
         bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-        bs_append(title = "Verificaciones", content = div(
+        bs_append(title = "Validaciones", content = div(
             
             tabsetPanel(type = "tabs",
                         id=ns("estructura_modelos_tabs"),
@@ -209,22 +209,22 @@ estructura_modelos_ui <- function(id, # escencial para poder armar el componente
 
                                                  bs_accordion(id = ns("small_world_verificacion")) %>%
                                                      bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-                                                     bs_append(title = "Parametros", content = div(
+                                                     bs_append(title = "Parámetros", content = div(
                                                          uiOutput(ns("small_world_params"))
                                                      )) %>%
 # UI - small world - Verificacion 1 -------------------------------------------
                                                      bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-                                                     bs_append(title = "Verificacion 1", content = div(
+                                                     bs_append(title = "Validación 1", content = div(
                                                          uiOutput(ns("small_world_validacion_1"))
                                                      )) %>%
 # UI - small world - Verificacion 2 -------------------------------------------
                                                     bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-                                                    bs_append(title = "Verificacion 2", content = div(
+                                                    bs_append(title = "Validación 2", content = div(
                                                         uiOutput(ns("small_world_validacion_2"))
                                                     )) %>%
 # UI - small world - Comparacion -------------------------------------------
                                                     bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-                                                    bs_append(title = "Comparacion 1", content = div(
+                                                    bs_append(title = "Comparación de Validaciones", content = div(
                                                         uiOutput(ns("small_world_comparacion_valores_validaciones"))
                                                     ))
                                                  
@@ -232,7 +232,7 @@ estructura_modelos_ui <- function(id, # escencial para poder armar el componente
                                              ),ns=ns),
                             conditionalPanel("!input.random_param_update",
                                              div(
-                                                 p("para validar Mundo pequeño se debe ejecutar la simulacion de redes aleatorias.(En el tab de Modelos / Aleatorio). ")
+                                                 p("para validar Mundo pequeño se debe ejecutar la simulación de redes aleatorias.(En el tab de Modelos / Aleatorio). ")
                                              ),ns=ns)
                         )) ,# fin small world
 # UI - VERIFICACION - SCALE FREE -----------------------------------------
@@ -269,7 +269,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
                    "dist. camino medio"=avg_path,
                    "ley pot. alfa"=pow_law_alpha,
                    "ley pot. signif. test KS"=pow_law_ks_p,
-                   "alfa > 1"=pow_law_greater_than_1,
+                   "alfa > 1"=pow_law_greater_than_2,
                    "test KS significativo"=pow_law_ks_p_is_signif)
 
         DT::datatable(
@@ -408,7 +408,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
                    "dist.camino medio"=avg_path,
                    "ley pot. alfa"=pow_law_alpha,
                    "ley pot. signif. test KS"=pow_law_ks_p,
-                   "alfa > 1"=pow_law_greater_than_1,
+                   "alfa > 1"=pow_law_greater_than_2,
                    "test KS significativo"=pow_law_ks_p_is_signif)
         
         DT::datatable(
@@ -531,7 +531,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
                    "dist.camino medio"=avg_path,
                    "ley pot. alfa"=pow_law_alpha,
                    "ley pot. signif. test KS"=pow_law_ks_p,
-                   "alfa > 1"=pow_law_greater_than_1,
+                   "alfa > 1"=pow_law_greater_than_2,
                    "test KS significativo"=pow_law_ks_p_is_signif)
         
         DT::datatable(
@@ -649,7 +649,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
                     "dist.camino medio"=avg_path,
                     "ley pot. alfa"=pow_law_alpha,
                     "ley pot. signif. test KS"=pow_law_ks_p,
-                    "alfa > 1"=pow_law_greater_than_1,
+                    "alfa > 1"=pow_law_greater_than_2,
                     "test KS significativo"=pow_law_ks_p_is_signif)
          
          DT::datatable(
@@ -682,7 +682,10 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
          
          paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
          
-         smallworldness_grafo <- qgraph::smallworldness(current_grafo)
+         # validacion 2. solo control interaciones y  lo & hi confidencia. que le dejamos lo default
+         # para generar los 1000 el de smallworldness utiliza: degree.sequence.game
+         # https://www.rdocumentation.org/packages/igraph/versions/0.4.1/topics/degree.sequence.game
+         smallworldness_grafo <- qgraph::smallworldness(x=current_grafo,B = params %>% pull(param_iter) )
          es_mayor_a_1 <- smallworldness_grafo > 1
          es_mayor_a_3 <- smallworldness_grafo > 3
          parametros_sw <- paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
@@ -718,13 +721,14 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
      output$small_world_validacion_1 <- renderUI({
          resultado <- div(
              h2("Validación 1:"),
-             p("para validar small world se tomo el criterio de comparar la red actual contra redes aleatorias ( lo seleccionado en el tab de Modelos / Aleatorio). "),
-             p("la comparacion se lleva a cabo en el promedio del camino mas corto VS la media del promedio del camino mas corto de las N redes simuladas."),             
-             p("para mas detalles ver: Bialonski (2010) donde se detalla el procedimiento."),
+             p("para validar small world se tomó el criterio de comparar la red actual contra redes aleatorias ( lo seleccionado en el tab de Modelos / Aleatorio). "),
+             p("la comparación se lleva a cabo en el promedio del camino mas corto VS la media del promedio del camino más corto de las N redes simuladas."),             
+             p("para mas detalles ver: ",a(href="https://doi.org/10.1063/1.3360561","Bialonski (2010)")," donde se detalla el procedimiento."),
+             
              p(strong("Mundo pequeño: ")," si Delta ~=1 y Gamma > 1"),
              p(strong('Delta = '),'L/Lr. y ',strong('Gamma = '),"C/Cr."),
-             p("L: promedio camino mas corto "),
-             p("Lr: promedio de promedio camino mas corto de las simulaciones"),
+             p("L: promedio camino más corto "),
+             p("Lr: promedio de promedio camino más corto de las simulaciones"),
              p("C: transitivity "),
              p("Cr: promedio de transitivity de las simulaciones"),
              p(strong("Delta: "),small_world_reactive_data()$delta_net),
@@ -740,9 +744,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
          resultado <- div(
              h2("Validación 2: "),
              p("Una red puede ser considerada 'mundo pequeño ' si la 'smallworldness' es mayor a 1 ",a(href="https://www.rdocumentation.org/packages/qgraph/versions/1.5/topics/smallworldness","(qgraph::smallworldness)")),
-             p("Un punto de vista mas estricto dice de la red llevarla a 'smallworldness' >= 3 ",a(href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0002051","(Humphries & Gurney, 2008)")),
-             p("Para considerar una red  'mundo pequeño', Es sugerido inspeccionar transitivity substancialmente mas grande que las simulaciones aleatorias, "),
-             p("tambien que el el promedio distancia del camino mas corto es similar o mayor (pero no mucho mayor)"),
+             p("Un punto de vista más estricto dice de la red llevarla a 'smallworldness' >= 3 ",a(href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0002051","(Humphries & Gurney, 2008)")),
              br(),
              p(strong("smallworldness: "), small_world_reactive_data()$smallworldness_grafo["smallworldness"]),
              p(strong("mayor a 1: "), if_else(small_world_reactive_data()$es_mayor_a_1,"SI","NO")),
@@ -771,10 +773,10 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
          # medidas_a_mostrar
          
          resultado <- div(
-             p("Recordar que para validacion 2, se vuelven a ejecutar simulaciones."),
-             p("Sobre las simulaciones de validacion 1, se puede seleccionar como se ejecutan en detalle."),
-             p("Sobre las simulaciones de validacion 2, se puede seleccionar como se ejecutan en detalle."),
-             p(strong("para cada variable: "),'valor validacion 1','valor validacion 2'),
+             p("Recordar que para Validación 2, se vuelven a ejecutar simulaciones."),
+             p("Sobre las simulaciones de Validación 1, se puede ver su detalle en su pestaña"),
+             p("Sobre las simulaciones de Validación 2, se puede ver su detalle en su pestaña"),
+             p(strong("para cada variable: "),'valor validación 1 | ','valor validación 2'),
              p(strong("transitivity [red]:"), small_world_reactive_data()$valores_para_red$transitivity,
                " | ",small_world_reactive_data()$smallworldness_grafo["trans_target"]),
              p(strong("transitivity [promedio simulaciones]:"),
@@ -785,7 +787,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
              p(strong("promedio distancia del camino mas corto [red]:"),
                small_world_reactive_data()$valores_para_red$avg_path,
                " | ",small_world_reactive_data()$smallworldness_grafo["averagelength_target"]),
-             p(strong("promedio distancia del camino mas corto [promedio simulaciones]:"),
+             p(strong("promedio distancia del camino más corto [promedio simulaciones]:"),
                small_world_reactive_data()$simulaciones_resumen_random$mean_avg_path_length,
                " | ",small_world_reactive_data()$smallworldness_grafo["averagelength_rnd_M"] )
          )
@@ -818,7 +820,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
          
          resultado <- div(
              p("comparado con los parametros de simulación aleatoria: "),
-             p(a("para recordar",href="https://stats.stackexchange.com/questions/175492/how-to-test-statistically-whether-my-network-graph-is-a-small-world-network")),
+             # p(a("para recordar",href="https://stats.stackexchange.com/questions/175492/how-to-test-statistically-whether-my-network-graph-is-a-small-world-network")),
              p("(",em("se sugiere configurar el modelo en Modelos: Red aleatoria"),")"),
              br(),
              div(wasd),
@@ -839,7 +841,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
              p("Una red puede ser considerada 'mundo pequeño ' si la 'smallworldness' es mayor a 1 ",a(href="https://www.rdocumentation.org/packages/qgraph/versions/1.5/topics/smallworldness","(qgraph::smallworldness)")),
              p("Un punto de vista mas estricto dice de la red llevarla a 'smallworldness' >= 3 ",a(href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0002051","(Humphries & Gurney, 2008)")),
              p("Para considerar una red  'mundo pequeño', Es sugerido inspeccionar transitivity substancialmente mas grande que las simulaciones aleatorias, "),
-             p("tambien que el el promedio distancia del camino mas corto es similar o mayor (pero no mucho mayor)"),
+             p("y que el el promedio de distancia del camino más corto es similar o mayor (pero no mucho mayor)"),
              br(),
              p("smallworldness: ", smallworldness_grafo["smallworldness"]),
              p("mayor a 1: ", es_mayor_a_1),
@@ -849,8 +851,8 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
              p("transitivity [promedio simulaciones]:", simulaciones_resumen_random$mean_transitivity, " | ", smallworldness_grafo["trans_rnd_M"] ),
              br(),
              # FIXME: revisar lo de smallworldness hasta donde debatirlo un poco.
-             p("promedio distancia del camino mas corto [red]:", valores_para_red$avg_path, " | ",smallworldness_grafo["averagelength_target"]),
-             p("promedio distancia del camino mas corto [promedio simulaciones]:", simulaciones_resumen_random$mean_avg_path_length, " | ",smallworldness_grafo["averagelength_rnd_M"] )#,
+             p("promedio distancia del camino más corto [red]:", valores_para_red$avg_path, " | ",smallworldness_grafo["averagelength_target"]),
+             p("promedio distancia del camino más corto [promedio simulaciones]:", simulaciones_resumen_random$mean_avg_path_length, " | ",smallworldness_grafo["averagelength_rnd_M"] )#,
              
              
              # FIXME: SACAR ESTO:
@@ -863,28 +865,34 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
      output$scale_free <- renderUI({
          
          valores_para_red <- valores_para_red_reactive()
+         # para valores 2 : ver http://networksciencebook.com/chapter/4 donde habla de < 2 no free scale
+         # por el tema del test de KS, leer el help del paquete, la funcion fit_power_law
          
          resultado <- div(
-             p(" A scale-free network is a network whose degree distribution follows a power law."),
-             p(" [2] A.-L. Barabási and R.Albert. Emergence of scaling in random networks. Science, 286:509-512, 1999. "),
-             p(" Verificamos por la ley de potencia:"),
-             # ley de potencia ( power fit law)
-             # resultado_fit_ley_potencia$alpha > 1  # 2.515571             
-             p("El parámetro alfa de la función es mayor que 1?"),
-             p("Exponente alfa: ",valores_para_red["pow_law_alpha"]),
-             p("El exponente es mayor a 1: ", valores_para_red["pow_law_greater_than_1"]),
-             
-             p("Dada la hipotesis:"),
-             p("the original data could have been drawn from the fitted power-law distribution."),
-             p("Small p-values (less than 0.05) indicate that the test rejected the hypothesis "),
              br(),
-             p("El test de ajuste de Kolmogorov-Smirnov es no significativo?"),
+             p(" Una red Libre escala es una red en la cual su distribución de grado sigue la ley de potencia."),
+             p(a(" Barabasi (2015) ",href="http://networksciencebook.com/chapter/4")),# Agregar el link al capitulo 4 del libro de network science.
+             p(strong(" Verificamos por la ley de potencia:")),
+             p(" Luego de ajustar los grados de la red a la ley de potencia, tenemos que verificar:"),
+             # ley de potencia ( power fit law)
+             # resultado_fit_ley_potencia$alpha > 2  # 2.515571             
+             p(strong("El parámetro alfa de la función es mayor que 2?")),
+             p("Exponente alfa: ",valores_para_red["pow_law_alpha"]),
+             p("El exponente es mayor a 2: ", valores_para_red["pow_law_greater_than_2"]),
+             
+             # p("Dada la hipotesis:"),
+             # the original data could have been drawn from the fitted power-law distribution.
+             p("Los datos originales pueden ser obtenidos dada la distribucion de ley de potencia obtenida."),
+             # Small p-values (less than 0.05) indicate that the test rejected the hypothesis
+             p("P-Valores pequenios ( Menores a 0.05 ) Indican que el test rechaza la hipotesis "),
+             br(),
+             p(strong("El test de ajuste de Kolmogorov-Smirnov significativo?")),
              p("p-value test KS: ",valores_para_red["pow_law_ks_p"]),
-             p("significativo para 0.05:",valores_para_red["pow_law_ks_p_is_signif"])
+             p("menor a 0.05:",valores_para_red["pow_law_ks_p_is_signif"]),
+             
+             p(if_else(!valores_para_red["pow_law_ks_p_is_signif"] & valores_para_red["pow_law_greater_than_2"],"Es de Libre Escala.","No es de Libre Escala."))
 
          )
-         
          resultado
-         
      }) 
 }

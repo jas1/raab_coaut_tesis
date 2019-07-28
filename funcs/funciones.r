@@ -834,7 +834,7 @@ simulaciones_to_resumen_ejecucion <- function(simulaciones_metricas_list,params_
             mean_diameter=mean(diameter),
             mean_avg_path_length=mean(avg_path),
             mean_pow_law_alpha=mean(pow_law_alpha),
-            mean_pow_law_greater_than_1=mean(pow_law_greater_than_1),
+            mean_pow_law_greater_than_2=mean(pow_law_greater_than_2),
             mean_pow_law_ks_p=mean(pow_law_ks_p),
             mean_pow_law_ks_p_is_signif=mean(pow_law_ks_p_is_signif))
     
@@ -875,12 +875,24 @@ calcular_metricas <- function(grafo,ks_p_signif=0.05){
     current_diameter <- diameter(grafo) # distance between vertices is non-trivial. diameter 10 . avg path = 5.45
     current_avg_path <- average.path.length(grafo) 
     
+    # este esta sacado de el apunte de soria de redes.
+    
+    # minimo_pow_law <- determinar_x_min_pow_law(igraph::degree(grafo))
+    # glimpse(minimo_pow_law)
     # power law fit
-    resultado_fit_ley_potencia <- power.law.fit(igraph::degree(grafo))
+    
+    # resultado_fit_ley_potencia_basico <- power.law.fit(x = igraph::degree(grafo))
+    # glimpse(resultado_fit_ley_potencia_basico)
+    # resultado_fit_ley_potencia_xmin_manual <- power.law.fit(x = igraph::degree(grafo),xmin = minimo_pow_law)
+    # glimpse(resultado_fit_ley_potencia_xmin_manual)
+    resultado_fit_ley_potencia <- power.law.fit(x = igraph::degree(grafo),implementation = "plfit")
+    glimpse(resultado_fit_ley_potencia)
+    
     # ¿El parámetro alfa de la función es mayor que 1? ¿Si? OK
     # 2.515571
+    threshold_alpha <- 2
     pow_law_alpha <- resultado_fit_ley_potencia$alpha
-    pow_law_greater_than_1 <- resultado_fit_ley_potencia$alpha > 1 
+    pow_law_greater_than_2 <- resultado_fit_ley_potencia$alpha > threshold_alpha 
     
     # ¿El test de ajuste de Kolmogorov-Smirnov es no significativo? OK.
     # Numeric scalar, the p-value of the Kolmogorov-Smirnov test. 
@@ -894,11 +906,32 @@ calcular_metricas <- function(grafo,ks_p_signif=0.05){
                diameter=current_diameter,
                avg_path=current_avg_path,
                pow_law_alpha=pow_law_alpha,
-               pow_law_greater_than_1=pow_law_greater_than_1,
+               pow_law_greater_than_2=pow_law_greater_than_2,
                pow_law_ks_p=pow_law_ks_p,
                pow_law_ks_p_is_signif=pow_law_ks_p_is_signif)
     ret
 }
+# 
+# determinar_x_min_pow_law <- function(data){
+#     # https://www.stat.berkeley.edu/~aldous/Research/Ugrad/Willy_Lai.pdf
+#     xmins <- unique(data) # search over all unique values of data
+#     dat <- numeric(length(xmins))
+#     z  <- sort(data)
+#     for (i in 1:length(xmins)){
+#         xmin <- xmins[i]    # choose next xmin candidate
+#         z1 <- z[z>=xmin]    # truncate data below this xmin value
+#         n <- length(z1)
+#         a <- 1+ n*(sum(log(z1/xmin)))^-1    # estimate alpha using direct MLE
+#         cx<- (n:1)/n # construct the empirical CDF
+#         cf <- (z1/xmin)^(-a+1)# construct the fitted theoreticalDF
+#         dat[i]  <-  max(abs(cf-cx))# compute the KS statistic
+#     }
+#     D = min(dat[dat>0],na.rm=TRUE)
+#     # find smallest D
+#     valuexmin = xmins[which(dat==D)] 
+#     valuexmin
+# }
+    
 
 # porque contra random ?
 # porque la verificacion de small wolrd se corre contra modelos 

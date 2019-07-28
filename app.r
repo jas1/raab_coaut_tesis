@@ -26,6 +26,9 @@ source(here:::here("funcs","shiny_module_subgrafos.r"),encoding = "UTF-8")
 # modelos
 source(here:::here("funcs","shiny_module_estructura_modelos.r"),encoding = "UTF-8")
 
+# comunidades
+source(here:::here("funcs","shiny_module_comunidades.r"),encoding = "UTF-8")
+
 # SHINY: UI -------------------------------------------------------------------
 
 source(here:::here("funcs","ui.r"),encoding = "UTF-8")

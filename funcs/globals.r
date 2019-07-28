@@ -228,7 +228,8 @@ names(modelado_df_vars_list) <- modelado_df_vars %>% pull(ES)
 
 
 # GLOBALS: PARA SHINY ---------------------------------------------------------------
-side_lay_width <- 3
-main_lay_width <- 12 - side_lay_width
+# side_lay_width <- 3
+# main_lay_width <- 12 - side_lay_width
+main_lay_width <- 12
 network_filter_edges_threshold_max <- 3 # para el inicial, esto luego se va a pisar cuando se recalcule la red.
 static_edge_width_multiplier <- 3

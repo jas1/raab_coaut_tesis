@@ -1,11 +1,20 @@
 # ui.r > moviendo toda la UI de shiny a UI.r
 
 # SHINY: HEADER -----------------------------------------------------------------------------------------------
-header <- dashboardHeader(
+# header <- dashboardHeader(
+#     title="Análisis de coautoría de Revista Argentina de Antropología Biológica 1996 a 2016",
+#     titleWidth = 770#,
+#     #dropdownMenu(dropdownMenuOutput("msg_menu"))
+# )
+header <- dashboardHeaderPlus(
+    enable_rightsidebar = TRUE,
+    rightSidebarIcon = "gears",
     title="Análisis de coautoría de Revista Argentina de Antropología Biológica 1996 a 2016",
     titleWidth = 770#,
     #dropdownMenu(dropdownMenuOutput("msg_menu"))
+    
 )
+
 # SHINY: SIDEBAR  -----------------------------------------------------------------------------------------------
 sidebar <- dashboardSidebar(
     sidebarMenu(
@@ -22,8 +31,81 @@ sidebar <- dashboardSidebar(
     )
 )
 
+# SHINY: Right sidebar: para estatico -------------------------------------
+
+
+rightsidebar <- rightSidebar(
+    background = "dark",
+    rightSidebarTabContent(
+        id = 1,
+        title = "Configuracion periódos",
+        icon = "desktop",
+        active = TRUE,
+        # div(id="sidebar_panel_div",
+            # sidebarPanel(
+                # width = side_lay_width,
+                br(),
+                # UI : Input Semilla --------------------------------------------------------------
+                textInput("semilla_seed", label = p("Semilla"), value = "12345"),
+                # UI : Input Periodos --------------------------------------------------------------                        
+                pickerInput(
+                    inputId = "input_static_periodos", 
+                    label = "Períodos",
+                    choices = global_periodos_disponibles, 
+                    options = list(
+                        'actions-box' = TRUE, 
+                        size = 10,
+                        'selected-text-format' = "count > 3",
+                        'deselect-all-text' = "Ninguno",
+                        'select-all-text' = "Todos",
+                        'none-selected-text' = "Sin Selección",
+                        'count-selected-text' = "{0} seleccionados."
+                    ), 
+                    multiple = TRUE
+                ),
+                
+                conditionalPanel('input.input_static_periodos != null',
+                                 # UI : Input Select Layout --------------------------------------------------------------
+                                 selectizeInput(inputId = "input_static_layout_select", label = "Disposición", choices = '',
+                                                options = list(
+                                                    placeholder = 'Seleccionar Disposición',
+                                                    onInitialize = I('function() { this.setValue("layout_nicely"); }')),
+                                                multiple = FALSE),
+                                 # UI : Input Select Autor --------------------------------------------------------------
+                                 selectizeInput(inputId = "input_static_network_selected_nodes", label = "Autores", choices = '',
+                                                options = list(
+                                                    placeholder = 'Seleccionar un Autor',
+                                                    onInitialize = I('function() { this.setValue(""); }')),
+                                                multiple = FALSE),
+                                 bs_accordion(id = "comunidades_accordion") %>%
+                                     bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+                                     bs_append(title = "Comunidades",coll ,content = div(
+                                         # UI : Input : Comunidades: Select Algoritmo --------------------------------------------------------------
+                                         
+                                         selectizeInput(inputId = "comunidades_sel_algo", label = "Algoritmo", choices = '',
+                                                        options = list(
+                                                            placeholder = 'Seleccionar Algoritmo',
+                                                            onInitialize = I('function() { this.setValue(""); }')),
+                                                        multiple = FALSE),
+                                         # UI : Input : Comunidades: Select Cant. coms --------------------------------------------------------------
+                                         
+                                         sliderInput("comunidades_n_view",
+                                                     "Cantidad:",
+                                                     min = 1, 
+                                                     max = 7,
+                                                     value = 5)
+                                     )
+                                     )
+                )
+                
+        #     )# fin sidebar panel
+        # )#,# fin sidebar div
+    )
+)
+
 # SHINY: BODY -----------------------------------------------------------------------
 body <- dashboardBody(
+    useShinyjs(),
     tabItems(
         # TAB CONSIDERACIONES --------------------------------------------------------------------------
         tabItem(tabName = "tab_consideraciones",
@@ -78,58 +160,9 @@ body <- dashboardBody(
                         tags$script(src="https://cdn.plot.ly/plotly-locale-es-latest.js")
                         # tags$script("Plotly.setPlotConfig({locale: 'es'});")
                     ),# fin tags head
-                    sidebarPanel(
-                        width = side_lay_width,
-                        br(),
-                        textInput("semilla_seed", label = p("Semilla"), value = "12345"),
-                        
-                        pickerInput(
-                            inputId = "input_static_periodos", 
-                            label = "Períodos",
-                            choices = global_periodos_disponibles, 
-                            options = list(
-                                'actions-box' = TRUE, 
-                                size = 10,
-                                'selected-text-format' = "count > 3",
-                                'deselect-all-text' = "Ninguno",
-                                'select-all-text' = "Todos",
-                                'none-selected-text' = "Sin Selección",
-                                'count-selected-text' = "{0} seleccionados."
-                            ), 
-                            multiple = TRUE
-                        ),
-                        
-                        conditionalPanel('input.input_static_periodos != null',
-                                         selectizeInput(inputId = "input_static_layout_select", label = "Disposición", choices = '',
-                                                        options = list(
-                                                            placeholder = 'Seleccionar Disposición',
-                                                            onInitialize = I('function() { this.setValue("layout_nicely"); }')),
-                                                        multiple = FALSE),
-                                         selectizeInput(inputId = "input_static_network_selected_nodes", label = "Autores", choices = '',
-                                                        options = list(
-                                                            placeholder = 'Seleccionar un Autor',
-                                                            onInitialize = I('function() { this.setValue(""); }')),
-                                                        multiple = FALSE),
-                                         bs_accordion(id = "comunidades_accordion") %>%
-                                             bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-                                             bs_append(title = "Comunidades",coll ,content = div(      
-                                                 selectizeInput(inputId = "comunidades_sel_algo", label = "Algoritmo", choices = '',
-                                                                options = list(
-                                                                    placeholder = 'Seleccionar Algoritmo',
-                                                                    onInitialize = I('function() { this.setValue(""); }')),
-                                                                multiple = FALSE),
-                                                 sliderInput("comunidades_n_view",
-                                                             "Cantidad:",
-                                                             min = 1, 
-                                                             max = 7,
-                                                             value = 5)
-                                             )
-                                             )
-                        )
-                        
-                    ),# fin sidebar panel
                     mainPanel(
                         width = main_lay_width,
+                        # actionButton("toggle_sidebar", "Mostrar / Ocultar Barra del costado"),
                         tabsetPanel(type = "tabs",
                                     id="estatico_tabs",
 # --- UI : Panel principal : visualizacion  ------------------
@@ -303,8 +336,6 @@ bs_set_opts(panel_type = "info") %>%
         # autores + estructura componente + articulos asociados componente
         # visualizacion del componente seleccionado.
         subgrafos_ui("estr_componentes")
-        
-        
     )) #%>% 
 
                                              ),
@@ -320,72 +351,94 @@ tabPanel("Comparación con modelos",
          estructura_modelos_ui("modelos")
 
          ),
+
+tabPanel("Comunidades", 
+         br(),
+         conditionalPanel('input.comunidades_sel_algo != null && input.comunidades_sel_algo!= "" ',
+            bs_accordion(id = "estructura_comunidades_accordion") %>%
+            bs_set_opts(panel_type = "info") %>%
+            bs_append(title = "Detalle de Comunidades", content = div(
+                # similar a lode comunidades, pero por componentes
+                # listado de componetes y su estructura
+                # listado de autores por componente
+                # autores + estructura componente + articulos asociados componente
+                # visualizacion del componente seleccionado.
+                comunidades_ui("comunidades_panel")
+            )) #%>% 
+         ),
+         conditionalPanel('input.comunidades_sel_algo == null || input.comunidades_sel_algo== "" ',
+                          div(
+                              br(),
+                              p("Debe seleccionar un Algoritmo de comunidades en el panel lateral")
+                          )
+         )# fin condicion falta seleccion
+    )#,# fin tab panel comunidades
 # --- UI : Panel principal : Comunidades  ------------------
-                                    tabPanel("Comunidades", 
-                                             br(),
-                                             conditionalPanel('input.comunidades_sel_algo != null && input.comunidades_sel_algo!= "" ',
-                                                              bs_accordion(id = "estructura_comunidades_accordion") %>%
-                                                                  bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-                                                                  
-                                                                  # comunidades - resultado algo --------------------------------------------
-                                                              bs_append(title = "Resultado Algoritmo", 
-                                                                        content = div(
-                                                                            htmlOutput('comunidades_result'),
-                                                                            br(),
-                                                                            downloadButton (outputId = "download_com_metricas",
-                                                                                            label = "Bajar metricas Comunidades."),
-                                                                            br(),
-                                                                            br(),
-                                                                            
-                                                                            DT::dataTableOutput('comunidades_result_metricas_listado')
-                                                                        )) %>%
-                                                                  bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-                                                                  
-                                                                  # comunidades - autores ---------------------------------------------------
-                                                              bs_append(title = "Autores por Comunidad", content = div(
-                                                                  br(),
-                                                                  downloadButton (outputId = "download_com_metricas_aut",
-                                                                                  label = "Bajar metricas Comunidades."),
-                                                                  br(),
-                                                                  br(),
-                                                                  DT::dataTableOutput('cantidad_comunidades_metricas'))
-                                                              ) %>%
-                                                                  bs_set_opts(panel_type = "info") %>%
-                                                                  
-                                                                  # comunidades - detalle ---------------------------------------------------
-                                                              bs_append(title = "Detalle Comunidad Seleccionada", content = 
-                                                                            
-                                                                            div(
-                                                                                conditionalPanel('!(input.cantidad_comunidades_metricas_rows_selected != null && input.cantidad_comunidades_metricas_rows_selected != "")', 
-                                                                                                 br(),
-                                                                                                 div(p("Debe seleccionar una comunidad en 'Autores por Comunidad'"))
-                                                                                ), # fin debe seleccionar comunidad
-                                                                                conditionalPanel('input.cantidad_comunidades_metricas_rows_selected != null && input.cantidad_comunidades_metricas_rows_selected != ""', 
-                                                                                                 div(htmlOutput('detalle_comunidad_seleccionada'),
-                                                                                                     br(),
-                                                                                                     h2('Estructura Comunidad'),
-                                                                                                     DT::dataTableOutput('detalle_comunidad_seleccionada_metricas_subgrafo_table'),
-                                                                                                     br(),
-                                                                                                     h2('Artículos Comunidad'),
-                                                                                                     br(),
-                                                                                                     downloadButton (outputId = "download_com_sel_arts",
-                                                                                                                     label = "Bajar articulos Comunidad"),
-                                                                                                     br(),
-                                                                                                     br(),
-                                                                                                     DT::dataTableOutput('detalle_comunidad_seleccionada_articulos')
-                                                                                                 ) # fin div detalle comunidad  
-                                                                                )# fin conditional comunidad seleccionada
-                                                                            )
-                                                              )# fin bs_append detalle comunidad seleccionada. 
-                                             ),# fin comunidades ok.
-                                             conditionalPanel('input.comunidades_sel_algo == null || input.comunidades_sel_algo== "" ',
-                                                              div(
-                                                                  br(),
-                                                                  p("Debe seleccionar un Algoritmo de comunidades en el panel lateral")
-                                                              )
-                                                              
-                                             )# fin condicion falta seleccion
-                                    )# fin tab comunidades
+# tabPanel("Comunidades", 
+#          br(),
+#          conditionalPanel('input.comunidades_sel_algo != null && input.comunidades_sel_algo!= "" ',
+#                           bs_accordion(id = "estructura_comunidades_accordion") %>%
+#                               bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+#                               
+#                               # comunidades - resultado algo --------------------------------------------
+#                           bs_append(title = "Resultado Algoritmo", 
+#                                     content = div(
+#                                         htmlOutput('comunidades_result'),
+#                                         br(),
+#                                         downloadButton (outputId = "download_com_metricas",
+#                                                         label = "Bajar metricas Comunidades."),
+#                                         br(),
+#                                         br(),
+#                                         
+#                                         DT::dataTableOutput('comunidades_result_metricas_listado')
+#                                     )) %>%
+#                               bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+#                               
+#                               # comunidades - autores ---------------------------------------------------
+#                           bs_append(title = "Autores por Comunidad", content = div(
+#                               br(),
+#                               downloadButton (outputId = "download_com_metricas_aut",
+#                                               label = "Bajar metricas Comunidades."),
+#                               br(),
+#                               br(),
+#                               DT::dataTableOutput('cantidad_comunidades_metricas'))
+#                           ) %>%
+#                               bs_set_opts(panel_type = "info") %>%
+#                               
+#                               # comunidades - detalle ---------------------------------------------------
+#                           bs_append(title = "Detalle Comunidad Seleccionada", content = 
+#                                         
+#                                         div(
+#                                             conditionalPanel('!(input.cantidad_comunidades_metricas_rows_selected != null && input.cantidad_comunidades_metricas_rows_selected != "")', 
+#                                                              br(),
+#                                                              div(p("Debe seleccionar una comunidad en 'Autores por Comunidad'"))
+#                                             ), # fin debe seleccionar comunidad
+#                                             conditionalPanel('input.cantidad_comunidades_metricas_rows_selected != null && input.cantidad_comunidades_metricas_rows_selected != ""', 
+#                                                              div(htmlOutput('detalle_comunidad_seleccionada'),
+#                                                                  br(),
+#                                                                  h2('Estructura Comunidad'),
+#                                                                  DT::dataTableOutput('detalle_comunidad_seleccionada_metricas_subgrafo_table'),
+#                                                                  br(),
+#                                                                  h2('Artículos Comunidad'),
+#                                                                  br(),
+#                                                                  downloadButton (outputId = "download_com_sel_arts",
+#                                                                                  label = "Bajar articulos Comunidad"),
+#                                                                  br(),
+#                                                                  br(),
+#                                                                  DT::dataTableOutput('detalle_comunidad_seleccionada_articulos')
+#                                                              ) # fin div detalle comunidad  
+#                                             )# fin conditional comunidad seleccionada
+#                                         )
+#                           )# fin bs_append detalle comunidad seleccionada. 
+#          ),# fin comunidades ok.
+#          conditionalPanel('input.comunidades_sel_algo == null || input.comunidades_sel_algo== "" ',
+#                           div(
+#                               br(),
+#                               p("Debe seleccionar un Algoritmo de comunidades en el panel lateral")
+#                           )
+#                           
+#          )# fin condicion falta seleccion
+# )# fin tab comunidades
                         )# fin tabs panel
                     )# fin main panel
                 )# fin fluid page
@@ -515,6 +568,53 @@ tabPanel("Comparación con modelos",
                                   )
                               ) # fin div temporal - top N - acumulado 
                     ) %>% # fin append temporal - top N - acumulado 
+
+# temporal - top n - anual ------------------------------------------------
+
+
+bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+    bs_append(title = "Métricas de Nodos, principales N en el tiempo", 
+              content = div(
+                  fluidRow(
+                      column(3,
+                             pickerInput(
+                                 inputId = "temporal_sel_vars_anual", 
+                                 label = "Variables",
+                                 choices = '',
+                                 options = list(
+                                     placeholder = 'Seleccionar Variable',
+                                     onInitialize = I('function() { this.setValue(""); }'),
+                                     'actions-box' = TRUE, 
+                                     size = 10,
+                                     'selected-text-format' = "count > 3",
+                                     'deselect-all-text' = "Ninguno",
+                                     'select-all-text' = "Todos",
+                                     'none-selected-text' = "Sin Selección",
+                                     'count-selected-text' = "{0} seleccionados."
+                                 ), 
+                                 multiple = FALSE
+                             )),
+                      column(3,
+                             sliderInput("top_n_periodos_anual", label = p("Principales N"), value = 5,min = 1,max = 10)
+                      ),
+                      column(6,
+                             downloadButton (outputId = "download_temporal_grafos_top_n_anual",
+                                             label = "Bajar est. nodos red. temporal - acumulado")
+                             
+                      )
+                      # actionButton('temporal_estructura_refrescar_boton', 'Ver'),
+                  ),
+                  fluidRow(
+                      column(12,
+                             conditionalPanel('(input.temporal_sel_vars_anual != null && input.temporal_sel_vars_anual!= "" )',
+                                              plotlyOutput('temporal_grafos_top_n_anual')
+                                              # timevisOutput('temporal_grafos_heathmap_acum')
+                             )
+                      )
+                  )
+              ) # fin div temporal - top N - acumulado 
+    ) %>%                    
+                    
                     
                     
                     # temporal - dinamico - acumulado  ----------------------------------------
@@ -536,48 +636,7 @@ tabPanel("Comparación con modelos",
                               )# fin content div
                     ) #%>% # fin bs append Visualización dinámica - Acumulado
                 
-                # temporal - dinamico - acumulado  ----------------------------------------
-                # descartado porque las agregaciones no se hacen bien.
-                # estaria interesante algo de esto
-                # esto por ahora se puede analizar las agregaciones a mano 
-                # en la parte estatica
-                # bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-                #     bs_append(title = "Visualización dinámica - Básico", 
-                #               content = div(
-                #                   fluidRow(
-                #                       column(6,div(
-                #                           ndtv:::ndtvAnimationWidgetOutput("temporal_dinamico_basico"))
-                #                       ),# fin column 6
-                #                       column(6,
-                #                              div(
-                #                                  pickerInput(
-                #                                      inputId = "input_temporal_basico_periodos", 
-                #                                      label = "Agrupamiento Periodos",
-                #                                      #choices = global_periodos_disponibles,
-                #                                      choices = list(), 
-                #                                      options = list(
-                #                                          onInitialize = I('function() { this.setValue(""); }'),
-                #                                          'actions-box' = TRUE, 
-                #                                          size = 10,
-                #                                          'selected-text-format' = "count > 3",
-                #                                          'deselect-all-text' = "Ninguno",
-                #                                          'select-all-text' = "Todos",
-                #                                          'none-selected-text' = "Sin Selección",
-                #                                          'count-selected-text' = "{0} seleccionados."
-                #                                      ), 
-                #                                      multiple = FALSE
-                #                                  )
-                #                              ),
-                #                              div(
-                #                                 p("La visualización puede llegar a tardar 5 mins en generarse."),
-                #                                 p(paste0("Periodos Afectados:",paste0(collapse = ", ",cota_anio))),# fin periodos
-                #                                 p("Cada instante en el tiempo es un periodo."),
-                #                                 p("Color nodos: 3 escala azules; representan la Fuerza de colaboracion de autores.")
-                #                       )) # fin column 6
-                #                   )# fin fluid row
-                #               )# fin content div
-                #     )# fin bs append Visualización dinámica - Acumulado
-                
+              
                 
         )# fin tab temporal
     )
@@ -586,4 +645,5 @@ tabPanel("Comparación con modelos",
 
 # dashboard 2: temporal
 
-ui <- dashboardPage(header, sidebar, body)
+# ui <- dashboardPage(header, sidebar, body)
+ui <- dashboardPagePlus(header = header,sidebar = sidebar,body = body, rightsidebar = rightsidebar)
