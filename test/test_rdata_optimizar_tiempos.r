@@ -165,3 +165,45 @@ testthat::test_that("armar rdata para animacion acumulada",{
     
     #luego de probarlo live, en velocidad no hace falta chachear todo, solo el inicial
 })
+
+testthat::test_that("armar rdata para animacion acumulada",{
+    
+    temporal_acumulado_animacion_data_name <- here::here("data","temporal_acumulado_dyn_data.Rdata")
+    
+    base::load(temporal_acumulado_animacion_data_name)
+    
+    # compute.animation(temporal_dinamico_acumulado)
+    
+    # da feo
+    # investigar a futuro
+    # filmstrip(temporal_dinamico_acumulado,displaylabels=FALSE)
+    
+    # tambien da feo.   
+    # estoy hay que investigar a futuro
+    # timePrism(temporal_dinamico_acumulado,at=c(1,5,10,17),
+    #           displaylabels=TRUE,planes = TRUE,
+    #           label.cex=0.5)
+    
+    # son muchas relaciones, no esta tan mal , 
+    # tal vez si fuera interactivo
+    # queda para la prox
+    # timeline(temporal_dinamico_acumulado)
+    
+    # guau de rellaciones, y como se van dando 
+    # esta buenisimo, deberia ser interactivo.
+    # queda para la prox
+    # proximity.timeline(temporal_dinamico_acumulado,default.dist=6,
+    #                    mode='sammon',labels.at=17,vertex.cex=4)
+    
+    # esta bueno pero falta data no quiero solo ids
+    # df_dyn_cum <- as.data.frame(temporal_dinamico_acumulado) %>% as_tibble()
+    
+    
+    
+    # str(temporal_dinamico_acumulado$mel)
+    # temporal_dinamico_acumulado$mel
+    
+    
+})
+    
+

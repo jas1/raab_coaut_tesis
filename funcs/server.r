@@ -1130,11 +1130,26 @@ server <- function(input, output,session) {
                                             metrica=metrica_s,
                                             .f=function(d,metrica,cant){
                                                 metrica_sym <-rlang::sym(metrica_s)
-                                                ranking <- seq(from=1,to = cant,by = 1)
-                                                ret <- d %>% arrange(desc(!!metrica_sym)) %>% head(cant) %>% 
+                                                # ranking <- seq(from=1,to = cant,by = 1)
+                                                # ret <- d %>% arrange(desc(!!metrica_sym)) %>% head(cant) %>% 
+                                                #     mutate(posicion=ranking) %>% 
+                                                #     mutate(valor_seleccion= !!metrica_sym)
+                                                # ret
+                                                nested_arranged <- d %>% 
+                                                    nest(-!!metrica_sym) %>% 
+                                                    arrange(desc(!!metrica_sym))
+                                                
+                                                ranking <- seq(from=1,to = nrow(nested_arranged),by = 1)
+                                                
+                                                ret <- nested_arranged %>% 
                                                     mutate(posicion=ranking) %>% 
-                                                    mutate(valor_seleccion= !!metrica_sym)
+                                                    mutate(valor_seleccion= !!metrica_sym) %>% 
+                                                    head(cant)
+                                                
+                                                ret <- ret %>% unnest() 
+                                                
                                                 ret
+                                                
                                             }))
         
         resu
@@ -1171,7 +1186,11 @@ server <- function(input, output,session) {
  
             incProgress(indice/n, detail = paste("Armando Plot ...", indice)) # 3
             indice <- indice+1
-            
+            # req(input$top_n_periodos_anual)
+            # req(input$temporal_sel_vars_anual)
+            metrica_nombre <- estructura_red_nodos_vars_compara_simu_DF %>%  
+                filter( value == input$temporal_sel_vars_anual  ) %>% 
+                pull(name)
             plot_out <- resu %>% 
                 unnest(top_n_periodo) %>%
                 mutate(autor=fct_reorder(autor,posicion,.desc = TRUE)) %>% 
@@ -1182,7 +1201,10 @@ server <- function(input, output,session) {
                 theme_light()+
                 theme(axis.text.x = element_text(angle = 90, hjust = 1),
                       axis.text.y = element_text(size = 6))+
-                labs(x="",y="")
+                labs(x="",y="",
+                     color="Posición",
+                     title=paste0("Ranking de ",input$top_n_periodos_anual," en la métrica ",metrica_nombre))
+
         })
         
         

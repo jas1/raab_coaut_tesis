@@ -38,7 +38,7 @@ rightsidebar <- rightSidebar(
     background = "dark",
     rightSidebarTabContent(
         id = 1,
-        title = "Configuracion periódos",
+        title = "Estático - Configuración periódos",
         icon = "desktop",
         active = TRUE,
         # div(id="sidebar_panel_div",
@@ -105,7 +105,7 @@ rightsidebar <- rightSidebar(
 
 # SHINY: BODY -----------------------------------------------------------------------
 body <- dashboardBody(
-    useShinyjs(),
+    # useShinyjs(),
     tabItems(
         # TAB CONSIDERACIONES --------------------------------------------------------------------------
         tabItem(tabName = "tab_consideraciones",
@@ -203,7 +203,9 @@ body <- dashboardBody(
                                                                                                          )
                                                                                                          
                                                                                                          
-                                                                                        )), # fin col 9
+                                                                                        )# fin conditional panel periodos != null
+          
+                                                                                 ), # fin col 9
                                                                                  column(3, 
                                                                                         downloadButton (outputId = "output_static_download_network",
                                                                                                         label = "Bajar red como html") )
@@ -228,7 +230,14 @@ body <- dashboardBody(
                                                                         )  # fin div Heatmap net
                                                                         )# fin tab Heatmap
                                              )# fin tab panel vis de la red
-                                             )# fin conditional panel pare mostrar la red
+                                             ),# fin conditional panel pare mostrar la red
+                                            conditionalPanel('input.input_static_periodos == null',
+                                                             div(
+                                                                 p("Debe seleccionar un periodo."),
+                                                                 p("Esto se hace en el tab de configuración derecho."),
+                                                                 p("(son los engranajes arriba a la derecha de la pantalla)")
+                                                             )# fin div condigional panel periodos == null.
+                                            )# fin conditional panel periodos == null
                                     ),# fin tab panel network statica
                                     # --- UI : Panel principal : Artículos Asociados  ------------------
                                     
@@ -447,8 +456,8 @@ tabPanel("Comunidades",
 # TAB TEMPORAL --------------------------------------------------------------------------
         tabItem(tabName = "tab_analisis_temporal",
                 textInput("temporal_semilla_seed", label = p("Semilla"), value = "12345"),
-                p("Las operacionres realizadas en cada seccion temporal pueden demorar bastante tiempo. ( hasta 5 mins aprox. )"),
-                br(),
+                # p("Las operacionres realizadas en cada seccion temporal pueden demorar bastante tiempo. ( hasta 5 mins aprox. )"),
+                # br(),
                 
                 # p("Esta pestaña estará disponible proximamente."),
                 # p("Esta pestaña tiene la info de análisis temporal, esto incluye todos los periodos desde t1 hasta t20."),
@@ -456,6 +465,27 @@ tabPanel("Comunidades",
                 
                 bs_accordion(id = "accordeon_temporal") %>%
                     bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+                    
+                    # temporal - dinamico - acumulado  ----------------------------------------
+                
+                bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+                    bs_append(title = "Visualización dinámica - Acumulado", 
+                              content = div(
+                                  fluidRow(
+                                      column(6,div(
+                                          ndtv:::ndtvAnimationWidgetOutput("temporal_dinamico_acumulado"))
+                                      ),# fin column 6
+                                      column(6,div(
+                                          p("La visualización puede llegar a tardar 5 mins en generarse."),
+                                          p(paste0("Periodos Afectados:",paste0(collapse = ", ",cota_anio))),# fin periodos
+                                          p("Cada instante en el tiempo es un periodo."),
+                                          p("Color nodos: 3 escala azules; representan la Fuerza de colaboracion de autores.")
+                                      )) # fin column 6
+                                  )# fin fluid row
+                              )# fin content div
+                    ) %>% # fin bs append Visualización dinámica - Acumulado
+                
+                
                     
                     # temporal - basico -------------------------------------------------
                 # download_temporal_acumulado_estruct
@@ -524,6 +554,53 @@ tabPanel("Comunidades",
                     ) # fin div - temporal - acumulado
                     ) %>% # fin bs append - temporal - acumulado
                     
+                    
+                    # temporal - top n - anual ------------------------------------------------
+                
+                
+                bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
+                    bs_append(title = "Métricas de Nodos, principales N en el tiempo", 
+                              content = div(
+                                  fluidRow(
+                                      column(3,
+                                             pickerInput(
+                                                 inputId = "temporal_sel_vars_anual", 
+                                                 label = "Variables",
+                                                 choices = '',
+                                                 options = list(
+                                                     placeholder = 'Seleccionar Variable',
+                                                     onInitialize = I('function() { this.setValue(""); }'),
+                                                     'actions-box' = TRUE, 
+                                                     size = 10,
+                                                     'selected-text-format' = "count > 3",
+                                                     'deselect-all-text' = "Ninguno",
+                                                     'select-all-text' = "Todos",
+                                                     'none-selected-text' = "Sin Selección",
+                                                     'count-selected-text' = "{0} seleccionados."
+                                                 ), 
+                                                 multiple = FALSE
+                                             )),
+                                      column(3,
+                                             sliderInput("top_n_periodos_anual", label = p("Principales N"), value = 5,min = 1,max = 10)
+                                      ),
+                                      column(6,
+                                             downloadButton (outputId = "download_temporal_grafos_top_n_anual",
+                                                             label = "Bajar est. nodos red. temporal - acumulado")
+                                             
+                                      )
+                                      # actionButton('temporal_estructura_refrescar_boton', 'Ver'),
+                                  ),
+                                  fluidRow(
+                                      column(12,
+                                             conditionalPanel('(input.temporal_sel_vars_anual != null && input.temporal_sel_vars_anual!= "" )',
+                                                              plotlyOutput('temporal_grafos_top_n_anual')
+                                                              # timevisOutput('temporal_grafos_heathmap_acum')
+                                             )
+                                      )
+                                  )
+                              ) # fin div temporal - top N - acumulado 
+                    ) %>%         
+                                        
                     # temporal - top N - acumulado ---------------------------------------
                 
                 bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
@@ -567,76 +644,13 @@ tabPanel("Comunidades",
                                       )
                                   )
                               ) # fin div temporal - top N - acumulado 
-                    ) %>% # fin append temporal - top N - acumulado 
+                    ) #%>% # fin append temporal - top N - acumulado 
 
-# temporal - top n - anual ------------------------------------------------
-
-
-bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-    bs_append(title = "Métricas de Nodos, principales N en el tiempo", 
-              content = div(
-                  fluidRow(
-                      column(3,
-                             pickerInput(
-                                 inputId = "temporal_sel_vars_anual", 
-                                 label = "Variables",
-                                 choices = '',
-                                 options = list(
-                                     placeholder = 'Seleccionar Variable',
-                                     onInitialize = I('function() { this.setValue(""); }'),
-                                     'actions-box' = TRUE, 
-                                     size = 10,
-                                     'selected-text-format' = "count > 3",
-                                     'deselect-all-text' = "Ninguno",
-                                     'select-all-text' = "Todos",
-                                     'none-selected-text' = "Sin Selección",
-                                     'count-selected-text' = "{0} seleccionados."
-                                 ), 
-                                 multiple = FALSE
-                             )),
-                      column(3,
-                             sliderInput("top_n_periodos_anual", label = p("Principales N"), value = 5,min = 1,max = 10)
-                      ),
-                      column(6,
-                             downloadButton (outputId = "download_temporal_grafos_top_n_anual",
-                                             label = "Bajar est. nodos red. temporal - acumulado")
-                             
-                      )
-                      # actionButton('temporal_estructura_refrescar_boton', 'Ver'),
-                  ),
-                  fluidRow(
-                      column(12,
-                             conditionalPanel('(input.temporal_sel_vars_anual != null && input.temporal_sel_vars_anual!= "" )',
-                                              plotlyOutput('temporal_grafos_top_n_anual')
-                                              # timevisOutput('temporal_grafos_heathmap_acum')
-                             )
-                      )
-                  )
-              ) # fin div temporal - top N - acumulado 
-    ) %>%                    
+           
                     
                     
                     
-                    # temporal - dinamico - acumulado  ----------------------------------------
-                
-                bs_set_opts(panel_type = "info", use_heading_link = FALSE) %>%
-                    bs_append(title = "Visualización dinámica - Acumulado", 
-                              content = div(
-                                  fluidRow(
-                                      column(6,div(
-                                          ndtv:::ndtvAnimationWidgetOutput("temporal_dinamico_acumulado"))
-                                      ),# fin column 6
-                                      column(6,div(
-                                          p("La visualización puede llegar a tardar 5 mins en generarse."),
-                                          p(paste0("Periodos Afectados:",paste0(collapse = ", ",cota_anio))),# fin periodos
-                                          p("Cada instante en el tiempo es un periodo."),
-                                          p("Color nodos: 3 escala azules; representan la Fuerza de colaboracion de autores.")
-                                      )) # fin column 6
-                                  )# fin fluid row
-                              )# fin content div
-                    ) #%>% # fin bs append Visualización dinámica - Acumulado
-                
-              
+
                 
         )# fin tab temporal
     )

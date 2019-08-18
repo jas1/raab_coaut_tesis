@@ -222,9 +222,9 @@ eda_articulos_server <- function(input, output, session, stringsAsFactors,acotar
                  subtitle="Artículos RAAB, obtenidos de la web",
                  x="",
                  y="# cantidad de articulos")+
-            coord_flip() +  # rotate the boxplot as there is not clear 
             theme_light()+
-            theme(legend.position = "none")
+            theme(legend.position = "none",
+                  axis.text.x = element_text(angle=45))
        # pl
        ggplotly(pl)
     })
@@ -242,8 +242,8 @@ eda_articulos_server <- function(input, output, session, stringsAsFactors,acotar
                  x="",
                  y="# cantidad por año",
                  fill="sección")+
-            coord_flip() +  # rotate the boxplot as there is not clear 
-            theme_light()
+            theme_light()+
+            theme(axis.text.x = element_text(angle=45))
        # pl
        ggplotly(pl)
     })
@@ -262,8 +262,9 @@ eda_articulos_server <- function(input, output, session, stringsAsFactors,acotar
                  x="",
                  y="# cantidad por año",
                  fill="edición")+
-            coord_flip() +  # rotate the boxplot as there is not clear 
-            theme_light()
+            # coord_flip() +  # rotate the boxplot as there is not clear 
+            theme_light()+
+            theme(axis.text.x = element_text(angle=45))
         # pl
         ggplotly(pl)
     })
@@ -295,18 +296,21 @@ eda_aut_art_ui <- function(id, label = "Análisis Exploratorio de Datos de Autor
                         br(),
                         uiOutput(ns('eda_total')),
                         br(),
-                        ### Que autores produjeron mas Artículos ?
+                        # UI: Que autores produjeron mas Artículos ? ------------------    
                         plotlyOutput(ns('eda_produccion_articulos')),
                         br(),
-                        ### como es la distribucion de Artículos por autor
+                        # UI: como es la distribucion de Artículos por autor ------------------    
                         plotlyOutput(ns('eda_articulos_por_autor')),
                         br(),
-                        ### Que Artículos tienen mas autores asociados ?
+                        # UI:  Que Artículos tienen mas autores asociados ? ------------------    
                         plotlyOutput(ns('eda_articulos_con_mas_autores')),
                         br(),
-                        ### cual es la frecuencia de autores por articulo ?
-                        plotlyOutput(ns('eda_autores_por_articulo'))
-
+                        # UI: cual es la frecuencia de autores por articulo ? ------------------    
+                        plotlyOutput(ns('eda_autores_por_articulo')),
+                        br(),
+                        # UI: Cantidad de autores por articulo por periodo en bins ------------------    
+                        plotlyOutput(ns('eda_autores_por_articulo_bins'))
+                        
                     ))
         )# fin tabset
     )# fin taglist
@@ -368,7 +372,7 @@ eda_aut_art_server <- function(input, output, session, stringsAsFactors,acotar_a
         p(nrow(data_reactive()))
     })
     
-    # ### Que autores produjeron mas Artículos ? eda_produccion_articulos
+# SVR: Que autores produjeron mas Artículos ? eda_produccion_articulos  ------------------
     output$eda_produccion_articulos <- renderPlotly({
         pl <- data_reactive() %>% group_by(autor) %>% tally() %>% 
             arrange(desc(n)) %>% 
@@ -386,7 +390,7 @@ eda_aut_art_server <- function(input, output, session, stringsAsFactors,acotar_a
         # pl
         ggplotly(pl)
     })
-    # ### como es la distribucion de Artículos por autor eda_articulos_por_autor
+# SVR: Como es la distribucion de Artículos por autor eda_articulos_por_autor  ------------------
     output$eda_articulos_por_autor <- renderPlotly({
         pl <- data_reactive() %>% group_by(autor) %>% tally() %>%
             ggplot(aes(x=n)) +
@@ -399,7 +403,7 @@ eda_aut_art_server <- function(input, output, session, stringsAsFactors,acotar_a
         # pl
         ggplotly(pl)
     })
-    # ### Que Artículos tienen mas autores asociados ? eda_articulos_con_mas_autores
+# SVR: Que Artículos tienen mas autores asociados ? eda_articulos_con_mas_autores ------------------
     output$eda_articulos_con_mas_autores <- renderPlotly({
        pl <-  data_reactive() %>% group_by(articulo_id) %>% tally() %>% 
             arrange(desc(n)) %>% 
@@ -417,7 +421,8 @@ eda_aut_art_server <- function(input, output, session, stringsAsFactors,acotar_a
        # pl
        ggplotly(pl)
     })
-    # ### cual es la frecuencia de autores por articulo ? eda_autores_por_articulo
+# SVR: Cual es la frecuencia de autores por articulo ? eda_autores_por_articulo ------------------
+
     output$eda_autores_por_articulo <- renderPlotly({
         pl <- data_reactive() %>% group_by(articulo_id) %>% tally() %>%
             ggplot(aes(x=n)) +
@@ -430,4 +435,38 @@ eda_aut_art_server <- function(input, output, session, stringsAsFactors,acotar_a
         ggplotly(pl)
         #pl
     })
+
+# SVR: Cantidad de autores por articulo por periodo en bins ------------------    
+    data_autoria_reactive <- reactive({
+        formas_autoria <- data_reactive() %>% 
+            count(articulo_id,anio,name = "cant_autores") %>% 
+            count(anio,cant_autores ,name="cant_articulos") %>% 
+            arrange(anio,desc(cant_articulos)) %>% 
+            mutate(cant_autores_bins= case_when(
+                cant_autores==1 ~ '1',
+                (cant_autores >= 2 & cant_autores <= 4) ~ '2 a 4',
+                (cant_autores >= 5 & cant_autores <= 7) ~ '5 a 7',
+                cant_autores >= 8 ~ '8 o +'
+            ))
+        formas_autoria
+    })
+    
+    output$eda_autores_por_articulo_bins <- renderPlotly({
+        pl <- data_autoria_reactive() %>% 
+            mutate(anio=as.factor(anio)) %>% 
+            ggplot(aes(x=anio,y=cant_articulos,
+                       fill=cant_autores_bins,
+                       label=cant_autores))+ # para plotly
+            geom_col()+
+            theme_light()+
+            scale_y_continuous(breaks = c(1:25))+
+            theme(axis.text.x = element_text(angle = 45,hjust = 1))+
+            labs(title='Cantidad de autores por artículo por año',
+                 subtitle='solo trabajos originales',
+                 x='',y='# articulos',fill='# autores' )
+        ggplotly(pl)
+    })
+    
+    
+    
 }

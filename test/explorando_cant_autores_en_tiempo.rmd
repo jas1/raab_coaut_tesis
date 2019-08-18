@@ -60,10 +60,42 @@ tendencias de mayor trabajo en equipo a lo largo del tiempo.
 
 
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
+
+# 
+# formas_autoria %>% 
+#     mutate(anio=as.factor(anio)) %>% 
+#     # mutate(cant_articulos_con_autores=as.factor(cant_articulos_con_autores)) %>% 
+#     # mutate(cant_autores=as.factor(cant_autores)) %>% 
+#     ggplot(aes(x= anio,y=cant_autores,fill=cant_articulos_con_autores))+
+#     geom_col()+
+#     theme_light()+
+#     # scale_fill_discrete()+
+#     theme(axis.text.x = element_text(angle = 45,hjust = 1))
+# # autores_articulos %>% 
+# #     count(articulo_id,anio,name = "cant_autores",sort=TRUE)
+# 
+# 
+# formas_autoria %>% 
+#     mutate(anio=as.factor(anio)) %>% 
+#     # mutate(cant_articulos_con_autores=as.factor(cant_articulos_con_autores)) %>% 
+#     # mutate(cant_autores=as.factor(cant_autores)) %>%
+#     # ggplot(aes(x=anio,y=cant_articulos_con_autores,fill=cant_autores,label=cant_autores))+
+#     ggplot(aes(x=anio,y=cant_autores,
+#                fill=cant_articulos_con_autores,label=cant_articulos_con_autores))+
+#     geom_tile()+
+#     geom_text()+
+#     theme_light()+
+#     # scale_fill_brewer(palette='Spectral')+
+#     scale_fill_distiller(palette = 'Spectral')+
+#     scale_y_continuous(breaks = c(1:21))+
+#     theme(axis.text.x = element_text(angle = 45,hjust = 1))
+
+# formas_autoria %>% group_by(anio) %>% summarise(sum(cant_articulos))
+
 formas_autoria <- autores_articulos %>% 
     count(articulo_id,anio,name = "cant_autores") %>% 
-    count(anio,cant_autores ,name="cant_articulos_con_autores") %>% 
-    arrange(anio,desc(cant_articulos_con_autores)) %>% 
+    count(anio,cant_autores ,name="cant_articulos") %>% 
+    arrange(anio,desc(cant_articulos)) %>% 
     mutate(cant_autores_bins= case_when(
         cant_autores==1 ~ '1',
         (cant_autores >= 2 & cant_autores <= 4) ~ '2 a 4',
@@ -71,41 +103,12 @@ formas_autoria <- autores_articulos %>%
         cant_autores >= 8 ~ '8 o +'
         ))
 
-formas_autoria %>% 
-    mutate(anio=as.factor(anio)) %>% 
-    # mutate(cant_articulos_con_autores=as.factor(cant_articulos_con_autores)) %>% 
-    # mutate(cant_autores=as.factor(cant_autores)) %>% 
-    ggplot(aes(x= anio,y=cant_autores,fill=cant_articulos_con_autores))+
-    geom_col()+
-    theme_light()+
-    # scale_fill_discrete()+
-    theme(axis.text.x = element_text(angle = 45,hjust = 1))
-# autores_articulos %>% 
-#     count(articulo_id,anio,name = "cant_autores",sort=TRUE)
-
-
-formas_autoria %>% 
-    mutate(anio=as.factor(anio)) %>% 
-    # mutate(cant_articulos_con_autores=as.factor(cant_articulos_con_autores)) %>% 
-    # mutate(cant_autores=as.factor(cant_autores)) %>%
-    # ggplot(aes(x=anio,y=cant_articulos_con_autores,fill=cant_autores,label=cant_autores))+
-    ggplot(aes(x=anio,y=cant_autores,
-               fill=cant_articulos_con_autores,label=cant_articulos_con_autores))+
-    geom_tile()+
-    geom_text()+
-    theme_light()+
-    # scale_fill_brewer(palette='Spectral')+
-    scale_fill_distiller(palette = 'Spectral')+
-    scale_y_continuous(breaks = c(1:21))+
-    theme(axis.text.x = element_text(angle = 45,hjust = 1))
-
-formas_autoria %>% group_by(anio) %>% summarise(sum(cant_articulos_con_autores))
-
-formas_autoria %>% 
+plot_out <- formas_autoria %>% 
     mutate(anio=as.factor(anio)) %>% 
 
-    ggplot(aes(x=anio,y=cant_articulos_con_autores,
-               fill=cant_autores_bins))+
+    ggplot(aes(x=anio,y=cant_articulos,
+               fill=cant_autores_bins,
+               label=cant_autores))+
     geom_col()+
     theme_light()+
     # scale_fill_brewer(palette='Spectral')+
@@ -114,8 +117,9 @@ formas_autoria %>%
     theme(axis.text.x = element_text(angle = 45,hjust = 1))+
     labs(title='Cantidad de autores por artículo por año',
          subtitle='solo trabajos originales',
-         x='',y='# articulos',fill='cant. autores\npor articulo' )
+         x='',y='# articulos',fill='# autores' )
 
+plotly::ggplotly(plot_out)
 ```
 
 ● Comparación con otras redes de coautoría realizadas en otros trabajos utilizando
