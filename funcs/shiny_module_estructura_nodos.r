@@ -38,6 +38,13 @@ estructura_nodos_ui <- function(id, # escencial para poder armar el componente
                         plotlyOutput(ns('est_nodos_densidad'))
                     )),
 
+                    # densidad de grado
+                    tabPanel("Distribución de Grado ( log / log )",div(
+                        plotlyOutput(ns('est_nodos_densidad_log_log'))
+                    )),
+
+
+
 
 # UI - histogramas variables ----------------------------------------------
 
@@ -169,20 +176,21 @@ estructura_nodos_server <- function(input, output, session, # parametros de shin
         degree_distrib <- degree_distribution(current_grafo) %>% 
             as_tibble() %>% 
             rename(degree_distribution=value) %>% 
-            tibble::rownames_to_column("degree") %>% 
-            mutate(degree=as.integer(degree)) %>% 
-            arrange(degree)
+            tibble::rownames_to_column("grado") %>% 
+            mutate(grado=as.integer(grado)) %>% 
+            arrange(grado)
     })
     
     # est_nodos_densidad 
     output$est_nodos_densidad <- renderPlotly({
         pl <- est_nodos_dist_grados_reactive() %>% 
-                ggplot(aes(x=degree,y=degree_distribution)) + 
+                ggplot(aes(x=grado,y=degree_distribution)) + 
                 geom_col() +
                 labs(title="Distribución de Grado",
-                     x="grado",
                      y="probabilidad de grado")+
-                theme_light()
+                theme_light()+
+            
+            
         # pl
         ggplotly(pl)
     })
@@ -190,7 +198,7 @@ estructura_nodos_server <- function(input, output, session, # parametros de shin
     # est_nodos_densidad_log_log 
     output$est_nodos_densidad_log_log <- renderPlotly({
         pl <- est_nodos_dist_grados_reactive() %>%
-                ggplot(aes(x=degree,y=degree_distribution+1)) +
+                ggplot(aes(x=grado,y=degree_distribution+1)) +
                 geom_point() +
                 scale_x_log10()+
                 scale_y_log10()+
@@ -241,7 +249,7 @@ estructura_nodos_server <- function(input, output, session, # parametros de shin
             ggplot(aes(valor)) +
             geom_histogram() +
             labs(title=paste0("Histograma de ",metrica_seleccionada),
-                 x= metrica_seleccionada,
+                 #x= metrica_seleccionada,
                  y= "cantidad nodos")+
             theme_light()
         # pl
@@ -270,7 +278,7 @@ estructura_nodos_server <- function(input, output, session, # parametros de shin
             ggplot(aes(valor)) +
             geom_density_line() +
             labs(title=paste0("Densidad de ",metrica_seleccionada),
-                 x= metrica_seleccionada,
+                # x= metrica_seleccionada,
                  y= "cantidad nodos")+
             theme_light()
         pl
