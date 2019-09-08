@@ -41,11 +41,8 @@ library(ggrepel)#install.packages("ggrepel")
 # install.packages("qgraph")
 # install.packages("ggridges")
 
-
-
-
-
-
+library("tm") # install.packages("tm")
+library("tidytext")# install.packages("tidytext")
 
 # https://github.com/timelyportfolio/RBioFabric/issues/1
 library(Rcpp)#install.packages("Rcpp")

@@ -64,7 +64,11 @@ tabsetPanel(type = "tabs",
             )),
 
 # plot_freq_palabras --------------------------------------
-            tabPanel("Gráfico palabras analizadas cantidad",div(
+            tabPanel("Gráfico palabras analizadas cantidad",
+                     div(
+                         sliderInput(ns("max_palabras"), "Cantidad:",
+                                     min = 1, max = 10, 
+                                     value = 5),
                 br(),
                 plotlyOutput(ns('plot_freq_palabras'))
             ))
@@ -77,6 +81,16 @@ textmining_server <- function(input, output, session, # parametros de shiny
                              current_datos_seleccion # datos de seleccion (componte id, cant autores, autores)
 ) {
 
+    observe({
+        # val <- input$control
+        cantidad <- nrow(palabras_analizadas_count_reactive())
+        # Control the value, min, max, and step.
+        # Step size is 2 when input value is even; 1 when value is odd.
+        updateSliderInput(session, "max_palabras", value = cantidad,
+                          min = 1, max = cantidad, 
+                          step = 1)
+    })
+    
 # datos -------------------------------------------------------------------
 
     palabras_stopwords_es_reactive <- reactive({
@@ -154,8 +168,8 @@ textmining_server <- function(input, output, session, # parametros de shiny
         unnested_titulos <- articulos_analizados_reactive()  %>%
             select(autores,url,titulos) %>% 
             unnest_tokens(palabra, titulos,drop = FALSE) %>% 
-            anti_join(en_stopwords) %>% # porque hay en ingles
-            anti_join(es_stopwords)
+            anti_join(palabras_stopwords_en_reactive()) %>% # porque hay en ingles
+            anti_join(palabras_stopwords_es_reactive())
         
         unnested_titulos
     })
@@ -204,9 +218,12 @@ textmining_server <- function(input, output, session, # parametros de shiny
     # head(10) %>% 
 # texto - plot_freq_palabras_reactive --------------------------------------------------
     plot_freq_palabras_reactive <- reactive({
+        req(input$max_palabras)
+        max_palabras <- input$max_palabras
+        # ns("max_palabras")
         plot_out <- palabras_analizadas_count_reactive() %>% 
             # mutate(palabra = fct_reorder(palabra, n)) %>% 
-            # head(10) %>% 
+            head(max_palabras) %>%
             ggplot(aes(palabra, n,fill='componente')) + # el fill es solo para que le ponga color
             geom_col() +
             xlab(NULL) +
