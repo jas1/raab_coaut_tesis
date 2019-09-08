@@ -19,7 +19,6 @@ estructura_nodos_ui <- function(id, # escencial para poder armar el componente
                     # listado en crudo
 
 # UI - tab DATOS ----------------------------------------------------------
-
                     
                     tabPanel("Datos",div(
                         br(),
@@ -32,7 +31,6 @@ estructura_nodos_ui <- function(id, # escencial para poder armar el componente
 
 # UI - Distribución de grado --------------------------------------------------
 
-
                     # densidad de grado
                     tabPanel("Distribución de grado",div(
                         plotlyOutput(ns('est_nodos_densidad'))
@@ -44,10 +42,7 @@ estructura_nodos_ui <- function(id, # escencial para poder armar el componente
                     )),
 
 
-
-
 # UI - histogramas variables ----------------------------------------------
-
 
                     # histogramas todas vars
                     tabPanel("Histograma variables",div(
@@ -152,8 +147,6 @@ estructura_nodos_server <- function(input, output, session, # parametros de shin
             formatRound('Page Rank',4) %>%
             formatRound('Fuerza Colaboración',4) 
         
-
-        
         dt_return
     })
     
@@ -188,9 +181,7 @@ estructura_nodos_server <- function(input, output, session, # parametros de shin
                 geom_col() +
                 labs(title="Distribución de Grado",
                      y="probabilidad de grado")+
-                theme_light()+
-            
-            
+                theme_light()
         # pl
         ggplotly(pl)
     })

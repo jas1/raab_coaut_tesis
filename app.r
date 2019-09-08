@@ -29,6 +29,10 @@ source(here:::here("funcs","shiny_module_estructura_modelos.r"),encoding = "UTF-
 # comunidades
 source(here:::here("funcs","shiny_module_comunidades.r"),encoding = "UTF-8")
 
+# comunidades
+source(here:::here("funcs","shiny_module_articulos_text_mining.r"),encoding = "UTF-8")
+
+
 # SHINY: UI -------------------------------------------------------------------
 
 source(here:::here("funcs","ui.r"),encoding = "UTF-8")

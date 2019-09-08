@@ -886,7 +886,7 @@ calcular_metricas <- function(grafo,ks_p_signif=0.05){
     # resultado_fit_ley_potencia_xmin_manual <- power.law.fit(x = igraph::degree(grafo),xmin = minimo_pow_law)
     # glimpse(resultado_fit_ley_potencia_xmin_manual)
     resultado_fit_ley_potencia <- power.law.fit(x = igraph::degree(grafo),implementation = "plfit")
-    glimpse(resultado_fit_ley_potencia)
+    # glimpse(resultado_fit_ley_potencia)
     
     # ¿El parámetro alfa de la función es mayor que 1? ¿Si? OK
     # 2.515571

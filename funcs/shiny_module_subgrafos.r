@@ -73,13 +73,19 @@ subgrafos_ui <- function(id, # escencial para poder armar el componente
                     '( input.dt_autores_subgrafos_rows_selected!= null && input.dt_autores_subgrafos_rows_selected != "" )',
                      ns=ns, 
                                  div(
-                                     h2('Artículos Subgrafo'),
-                                     br(),
-                                     downloadButton (outputId = ns("dw_articulos"),
-                                                     label = "Bajar artículos"),
-                                     br(),
-                                     br(),
-                                     DT::dataTableOutput(ns('dt_articulos'))
+
+# TEXTMINING ARTICULOS - TITULOS ------------------------------------------
+
+                                     textmining_ui(ns("textmining"))
+                                     
+                                     
+                                     # h2('Artículos Subgrafo'),
+                                     # br(),
+                                     # downloadButton (outputId = ns("dw_articulos"),
+                                     #                 label = "Bajar artículos"),
+                                     # br(),
+                                     # br(),
+                                     # DT::dataTableOutput(ns('dt_articulos'))
                                  ) # fin div detalle comunidad  
                 )# fin conditional comunidad seleccionada
             )) %>% # fin bs_append detalle comunidad seleccionada. 
@@ -192,19 +198,35 @@ subgrafos_server <- function(input, output, session, # parametros de shiny
             select(autores,anio,titulo,url,cant_autores,fuerza_colaboracion) %>%
             mutate(articulo=paste0("<p><a target='_blank' href='",url,"'>",titulo,"</a></p>")) %>% 
             group_by(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% tally() %>% 
-            select(autores,anio,articulo,cant_autores,fuerza_colaboracion)
+            select(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% 
+            mutate(parsed_data=purrr::map(articulo,.f = xml2::read_html)) %>% 
+            mutate(df_parsed=purrr::map(parsed_data,.f = function(x){
+                url <- x %>% 
+                    rvest::html_nodes(xpath = '//a') %>% 
+                    rvest::html_attr("href")
+                titulos <- x %>% 
+                    rvest::html_nodes(xpath = '//a') %>% 
+                    rvest::html_text()
+                data.frame(url,titulos,stringsAsFactors = FALSE)
+                
+            })) %>% 
+            unnest(df_parsed) %>% 
+            select(-parsed_data)
         
         filtro_coautores
     })
     
     output$dw_articulos <- downloadHandler( 
         filename = paste("sub_","autores","_", Sys.Date(), '.csv', sep=''), content = function(file) {
-            write.csv(articulos_reactive(), file,row.names = FALSE,fileEncoding = "UTF-8")
+            data_dl_art <- articulos_reactive() %>% select(-articulo)
+            
+            write.csv(data_dl_art, file,row.names = FALSE,fileEncoding = "UTF-8")
         })
     
     output$dt_articulos <- DT::renderDataTable({
+        dt_data <- articulos_reactive() %>% select(-url,-titulos)
         dt_out <- DT::datatable(
-            articulos_reactive(),
+            dt_data,
             options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')),
             escape = FALSE,
             rownames = FALSE,
@@ -213,6 +235,20 @@ subgrafos_server <- function(input, output, session, # parametros de shiny
     })
     
 
+# TEXT MINING -------------------------------------------------------------
+
+    # textmining_ui(ns("textmining"))
+    observeEvent(input$dt_autores_subgrafos_rows_selected,{
+        
+        current_com_selected <- autores_subgrafos_reactive()[input$dt_autores_subgrafos_rows_selected,]
+        datos_seleccion <- current_com_selected
+        
+        callModule(textmining_server, "textmining",
+                   articulos_reactive(),# parametros del componente: grafo
+                   datos_seleccion # datos autores
+        )
+    })
+    
 # NODOS -------------------------------------------------------------------
     
     current_grafo_selected <- reactive({

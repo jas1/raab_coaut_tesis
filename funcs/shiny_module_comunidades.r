@@ -75,13 +75,16 @@ comunidades_ui <- function(id, # escencial para poder armar el componente
                     '( input.dt_autores_subgrafos_rows_selected!= null && input.dt_autores_subgrafos_rows_selected != "" )',
                      ns=ns, 
                                  div(
-                                     h2('Artículos Comunidad'),
-                                     br(),
-                                     downloadButton (outputId = ns("dw_articulos"),
-                                                     label = "Bajar artículos"),
-                                     br(),
-                                     br(),
-                                     DT::dataTableOutput(ns('dt_articulos'))
+                                     # TEXTMINING ARTICULOS - TITULOS ------------------------------------------
+                                     
+                                     textmining_ui(ns("textmining"))
+                                     # h2('Artículos Comunidad'),
+                                     # br(),
+                                     # downloadButton (outputId = ns("dw_articulos"),
+                                     #                 label = "Bajar artículos"),
+                                     # br(),
+                                     # br(),
+                                     # DT::dataTableOutput(ns('dt_articulos'))
                                  ) # fin div detalle comunidad  
                 )# fin conditional comunidad seleccionada
             )) %>% # fin bs_append detalle comunidad seleccionada. 
@@ -189,7 +192,7 @@ comunidades_server <- function(input, output, session, # parametros de shiny
     })
 
     output$dw_estructura_subgrafos <- downloadHandler( 
-        filename = paste("sub_","estructura","_", Sys.Date(), '.csv', sep=''), content = function(file) {
+        filename = paste("comu_","estructura","_", Sys.Date(), '.csv', sep=''), content = function(file) {
             write.csv(subgrafos_estr_listado_reactive(), file,row.names = FALSE,fileEncoding = "UTF-8")
         })
     
@@ -217,7 +220,7 @@ comunidades_server <- function(input, output, session, # parametros de shiny
     })
     
     output$dw_autores_subgrafos <- downloadHandler( 
-        filename = paste("sub_","autores","_", Sys.Date(), '.csv', sep=''), content = function(file) {
+        filename = paste("comu_","autores","_", Sys.Date(), '.csv', sep=''), content = function(file) {
             write.csv(autores_subgrafos_reactive(), file,row.names = FALSE,fileEncoding = "UTF-8")
         })
     
@@ -246,19 +249,37 @@ comunidades_server <- function(input, output, session, # parametros de shiny
             select(autores,anio,titulo,url,cant_autores,fuerza_colaboracion) %>%
             mutate(articulo=paste0("<p><a target='_blank' href='",url,"'>",titulo,"</a></p>")) %>% 
             group_by(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% tally() %>% 
-            select(autores,anio,articulo,cant_autores,fuerza_colaboracion)
-        
+            select(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% 
+            mutate(parsed_data=purrr::map(articulo,.f = xml2::read_html)) %>% 
+            mutate(df_parsed=purrr::map(parsed_data,.f = function(x){
+                url <- x %>% 
+                    rvest::html_nodes(xpath = '//a') %>% 
+                    rvest::html_attr("href")
+                titulos <- x %>% 
+                    rvest::html_nodes(xpath = '//a') %>% 
+                    rvest::html_text()
+                data.frame(url,titulos,stringsAsFactors = FALSE)
+                
+            })) %>% 
+            unnest(df_parsed) %>% 
+            select(-parsed_data)
         filtro_coautores
     })
     
     output$dw_articulos <- downloadHandler( 
-        filename = paste("sub_","autores","_", Sys.Date(), '.csv', sep=''), content = function(file) {
-            write.csv(articulos_reactive(), file,row.names = FALSE,fileEncoding = "UTF-8")
+        filename = paste("comu_","autores","_", Sys.Date(), '.csv', sep=''), content = function(file) {
+            # write.csv(articulos_reactive(), file,row.names = FALSE,fileEncoding = "UTF-8")
+            
+            data_dl_art <- articulos_reactive() %>% select(-articulo)
+            
+            write.csv(data_dl_art, file,row.names = FALSE,fileEncoding = "UTF-8")
+            
         })
     
     output$dt_articulos <- DT::renderDataTable({
+        dt_data <- articulos_reactive() %>% select(-url,-titulos)
         dt_out <- DT::datatable(
-            articulos_reactive(),
+            dt_data,
             options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')),
             escape = FALSE,
             rownames = FALSE,
@@ -266,7 +287,20 @@ comunidades_server <- function(input, output, session, # parametros de shiny
         dt_out
     })
     
-
+# TEXT MINING -------------------------------------------------------------
+    
+    # textmining_ui(ns("textmining"))
+    observeEvent(input$dt_autores_subgrafos_rows_selected,{
+        
+        current_com_selected <- autores_subgrafos_reactive()[input$dt_autores_subgrafos_rows_selected,]
+        datos_seleccion <- current_com_selected
+        
+        callModule(textmining_server, "textmining",
+                   articulos_reactive(),# parametros del componente: grafo
+                   datos_seleccion # datos autores
+        )
+    })
+    
 # NODOS -------------------------------------------------------------------
     
     current_grafo_selected <- reactive({
@@ -283,44 +317,5 @@ comunidades_server <- function(input, output, session, # parametros de shiny
                    current_grafo_selected()# parametros del componente: grafo
         )
     })
-
-    # nodos_subgrafos_reactive <- reactive({
-    # 
-    #     # current_com_selected <- autores_subgrafos_reactive()[,]
-    #     # 
-    #     # glimpse(current_com_selected)
-    #     # glimpse(subgrafos_reactive())
-    #     current_com_selected_id <- input$dt_autores_subgrafos_rows_selected
-    #     
-    #     grafo_reactive_tmp <- subgrafos_reactive()[[current_com_selected_id]]
-    #     
-    #     nodos_df <- metricas_nodos_grafo(grafo_reactive_tmp) %>%
-    #         rename('Autor' = autor,
-    #                'Grado' = degree,
-    #                'Betweeness' = betweeness,
-    #                'Eigen Centrality' = eigen_centrality,
-    #                'Closeness' = closeness,
-    #                'Page Rank' = page_rank,
-    #                '# Triangulos' = count_triangles,
-    #                'Fuerza Colaboración' = fuerza_colaboracion)
-    #     
-    #     nodos_df
-    # })
-    # 
-    # output$dw_nodos_subgrafos <- downloadHandler( 
-    #     filename = paste("sub_","nodos","_", Sys.Date(), '.csv', sep=''), content = function(file) {
-    #         write.csv(nodos_subgrafos_reactive(), file,row.names = FALSE,fileEncoding = "UTF-8")
-    #     })
-    # 
-    # output$dt_nodos_subgrafos <- DT::renderDataTable({
-    #     dt_out <- DT::datatable(
-    #         nodos_subgrafos_reactive(),
-    #         options = list(language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')),
-    #         escape = FALSE,
-    #         rownames = FALSE,
-    #         selection="none")
-    #     dt_out
-    # })
-    
     
 }
