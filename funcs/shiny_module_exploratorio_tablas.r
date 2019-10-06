@@ -210,7 +210,8 @@ eda_articulos_server <- function(input, output, session, stringsAsFactors,acotar
     output$eda_total <- renderUI({ 
         p(nrow(data_reactive()))
     })
-    
+
+# articulos anio ----------------------------------------------------------
     output$eda_articulos_anio <- renderPlotly({
        pl <-  data_reactive() %>% 
             mutate(anio = factor(anio)) %>% 
@@ -228,7 +229,8 @@ eda_articulos_server <- function(input, output, session, stringsAsFactors,acotar
        # pl
        ggplotly(pl)
     })
-    
+
+# Articulos anio seccion --------------------------------------------------
     output$eda_articulos_anio_seccion <- renderPlotly({
        pl <-  data_reactive() %>% 
             mutate(anio = factor(anio)) %>% 
@@ -247,7 +249,8 @@ eda_articulos_server <- function(input, output, session, stringsAsFactors,acotar
        # pl
        ggplotly(pl)
     })
-    
+
+# articulos anio edicion --------------------------------------------------
     output$eda_articulos_anio_edicion <- renderPlotly({
         pl <- data_reactive() %>% 
             mutate(anio = factor(anio)) %>% 
