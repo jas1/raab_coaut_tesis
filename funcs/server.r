@@ -1273,6 +1273,42 @@ server <- function(input, output,session) {
     # temporal - dinamico - acumulado -----------------------------------------
     # agarrar el dinamico calculado , y sobre eso hacer las transformaciones de networkDynamic
     
+
+    # temporal - din - acum desc ----------------------------------------------
+
+    output$out_temporal_descripcion_dinamico_ui <- renderUI({
+        
+        df_descripcion_dinamica <- data.frame(
+            instante=seq(from=1,
+                         to=length(global_periodos_disponibles)),
+            periodo=global_periodos_disponibles,
+            stringsAsFactors = FALSE) %>% as_tibble() %>% 
+            mutate(instante=instante-1)
+    
+        output$df_descripcion_dinamica_out <- DT::renderDataTable(
+            rownames = FALSE,
+            selection = 'none',
+            
+            options = list(language = list(
+                url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json',
+                dom = 't')),
+            df_descripcion_dinamica
+            )
+        
+            
+        ret_ui <- div(
+            p("La visualización puede llegar a demorarse unos minutos."),
+            p("En la visualización se ve la linea temporal en los instantes de 0 a 17 que representan los periodos afectados descriptos mas abajo."),
+            p("Color nodos: 3 escala azules; representan la Fuerza de colaboracion de cada autor."),
+            p("Color y grosor de aristas: escala de 3 colores y 3 tamaños, representan la fuerza de colaboracion entre los autores conectados."),
+            p("Periodos Afectados:"),# fin periodos
+            DT::dataTableOutput("df_descripcion_dinamica_out")
+        )
+            
+        ret_ui    
+    })
+    
+    
     temporal_acumulado_network_pkg_reactive<- reactive({
         # nets <- generar_nets_from_igraph(temporal_grafos_acum_reactive())
         temporal_acumulado_network_pkg

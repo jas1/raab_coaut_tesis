@@ -475,12 +475,7 @@ tabPanel("Comunidades",
                                       column(6,div(
                                           ndtv:::ndtvAnimationWidgetOutput("temporal_dinamico_acumulado"))
                                       ),# fin column 6
-                                      column(6,div(
-                                          p("La visualización puede llegar a tardar 5 mins en generarse."),
-                                          p(paste0("Periodos Afectados:",paste0(collapse = ", ",cota_anio))),# fin periodos
-                                          p("Cada instante en el tiempo es un periodo."),
-                                          p("Color nodos: 3 escala azules; representan la Fuerza de colaboracion de autores.")
-                                      )) # fin column 6
+                                      column(6,uiOutput("out_temporal_descripcion_dinamico_ui")) # fin column 6
                                   )# fin fluid row
                               )# fin content div
                     ) %>% # fin bs append Visualización dinámica - Acumulado
