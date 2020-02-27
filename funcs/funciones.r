@@ -115,7 +115,7 @@ lista_vertices_autores <- function(data_acotado){
     
     vertex_list_autores2 <- vertex_list_autores %>% 
         mutate(anios2=str_split(anios,pattern = ";")) %>% 
-        unnest() %>% 
+        unnest(cols = c(anios2)) %>% 
         count(aut_id,autor,autor_id,anios,secciones,
               fuerza_colaboracion_total,cant_autores_coautoria,anios2) %>% 
         mutate(anios3=paste0(anios2,"[",n,"]")) %>% 

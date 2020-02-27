@@ -49,7 +49,7 @@ estructura_nodos_ui <- function(id, # escencial para poder armar el componente
                         pickerInput(
                             inputId = ns("est_nodos_histo_vars"), 
                             label = "Variables",
-                            choices = '',
+                            choices = estructura_red_nodos_vars_compara_simu_list,
                             options = list(
                                 placeholder = 'Seleccionar Variable',
                                 onInitialize = I('function() { this.setValue(""); }'),
@@ -74,7 +74,7 @@ estructura_nodos_ui <- function(id, # escencial para poder armar el componente
                         pickerInput(
                             inputId = ns("est_nodos_densidades_vars"), 
                             label = "Variables",
-                            choices = '',
+                            choices = estructura_red_nodos_vars_compara_simu_list,
                             options = list(
                                 placeholder = 'Seleccionar Variable',
                                 onInitialize = I('function() { this.setValue(""); }'),

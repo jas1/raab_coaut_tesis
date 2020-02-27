@@ -491,7 +491,7 @@ tabPanel("Comunidades",
                               pickerInput(
                                   inputId = "temporal_sel_vars", 
                                   label = "Variables",
-                                  choices = '',
+                                  choices = estructura_red_vars_compara_simu_list,
                                   options = list(
                                       placeholder = 'Seleccionar Variable',
                                       onInitialize = I('function() { this.setValue(""); }'),
@@ -524,7 +524,7 @@ tabPanel("Comunidades",
                         pickerInput(
                             inputId = "temporal_sel_vars_2", 
                             label = "Variables",
-                            choices = '',
+                            choices = estructura_red_vars_compara_simu_list,
                             options = list(
                                 placeholder = 'Seleccionar Variable',
                                 onInitialize = I('function() { this.setValue(""); }'),
@@ -561,7 +561,7 @@ tabPanel("Comunidades",
                                              pickerInput(
                                                  inputId = "temporal_sel_vars_anual", 
                                                  label = "Variables",
-                                                 choices = '',
+                                                 choices = estructura_red_nodos_vars_compara_simu_list,
                                                  options = list(
                                                      placeholder = 'Seleccionar Variable',
                                                      onInitialize = I('function() { this.setValue(""); }'),
@@ -606,7 +606,7 @@ tabPanel("Comunidades",
                                              pickerInput(
                                                  inputId = "temporal_sel_vars_3", 
                                                  label = "Variables",
-                                                 choices = '',
+                                                 choices = estructura_red_nodos_vars_compara_simu_list,
                                                  options = list(
                                                      placeholder = 'Seleccionar Variable',
                                                      onInitialize = I('function() { this.setValue(""); }'),
