@@ -2,7 +2,7 @@
 
 
 
-shiny_apps_import_flag <- FALSE
+shiny_apps_import_flag <- TRUE
 
 if (!shiny_apps_import_flag) {
     library(pacman)
