@@ -1146,7 +1146,7 @@ server <- function(input, output,session) {
                                                     mutate(valor_seleccion= !!metrica_sym) %>% 
                                                     head(cant)
                                                 
-                                                ret <- ret %>% unnest() 
+                                                ret <- ret %>% unnest(cols = c(data)) 
                                                 
                                                 ret
                                                 
