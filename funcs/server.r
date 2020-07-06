@@ -1136,7 +1136,7 @@ server <- function(input, output,session) {
                                                 #     mutate(valor_seleccion= !!metrica_sym)
                                                 # ret
                                                 nested_arranged <- d %>% 
-                                                    nest(-!!metrica_sym) %>% 
+                                                    nest(-!!metrica_sym) %>% # si hay empates.
                                                     arrange(desc(!!metrica_sym))
                                                 
                                                 ranking <- seq(from=1,to = nrow(nested_arranged),by = 1)
