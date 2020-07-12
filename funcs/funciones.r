@@ -660,17 +660,17 @@ calcular_estructura_grafo <- function(grafo_reactive_tmp,base_articulos){
     # glimpse(resultado)
     # glimpse(base_articulos)
     # RESULTADOS SEGUN BASE AUTORES
-    resultado$cantidad_autores <- base_articulos %>% group_by(autor_id) %>% tally() %>% count() %>% as.integer()
+    resultado$cantidad_autores <- base_articulos %>% dplyr::group_by(autor_id) %>% dplyr::tally() %>% dplyr::count() %>% as.integer()
     # cantidad papers: sale de base articulos
-    resultado$cantidad_papers <- base_articulos %>% group_by(articulo_id) %>% tally() %>% count() %>% as.integer()
+    resultado$cantidad_papers <- base_articulos %>% dplyr::group_by(articulo_id) %>% dplyr::tally() %>% dplyr::count() %>% as.integer()
     # no newman <- cantidad autorias ( o sea que 1 autor es parte de 1 paper, seria la suma de los autores de los papers.)
-    resultado$cantidad_contribuciones <- base_articulos %>% group_by(articulo_id) %>% tally() %>% 
-        summarize(total=sum(n)) %>% as.integer()
+    resultado$cantidad_contribuciones <- base_articulos %>% dplyr::group_by(articulo_id) %>% dplyr::tally() %>% 
+        dplyr::summarise(total=sum(n)) %>% as.integer()
     # cantidad papers por autor AVG: sale de la base articulos
-    resultado$cantidad_paper_por_autor_avg <- base_articulos %>% group_by(autor_id) %>% tally() %>% summarize(media=mean(n)) %>% as.double()
+    resultado$cantidad_paper_por_autor_avg <- base_articulos %>% dplyr::group_by(autor_id) %>% dplyr::tally() %>% dplyr::summarise(media=mean(n)) %>% as.double()
     # cantidad autores por paper AVG: sale de bae articulos
-    resultado$cantidad_autores_por_paper_avg <- base_articulos %>% group_by(articulo_id) %>% tally() %>% 
-        summarize(media=mean(n)) %>% as.double() # idea que tan en la media esta el autor respecto de la estructura.
+    resultado$cantidad_autores_por_paper_avg <- base_articulos %>% dplyr::group_by(articulo_id) %>% dplyr::tally() %>% 
+        dplyr::summarise(media=mean(n)) %>% as.double() # idea que tan en la media esta el autor respecto de la estructura.
     resultado
 }
 

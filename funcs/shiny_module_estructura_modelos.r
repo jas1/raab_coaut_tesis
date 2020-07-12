@@ -52,7 +52,8 @@ estructura_modelos_ui <- function(id, # escencial para poder armar el componente
                                     pickerInput(
                                         inputId = ns("modelo_random_histo_vars_sel"), 
                                         label = "Variables",
-                                        choices = '',
+                                        choices = modelado_df_vars_list,
+                                        #choices = "",#
                                         options = list(
                                             placeholder = 'Seleccionar Variable',
                                             onInitialize = I('function() { this.setValue(""); }'),
@@ -330,6 +331,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
 #     })
 #     
     modelo_random_histo_vars_opts_reactive <- reactive({
+        print(paste0("random: ",model_list_global_vars))
         # no toma globales, hay que pasarlo por parametro
         # ret <- estructura_red_nodos_vars_compara_simu_list # es global
         # ret <- colnames(valores_para_red_reactive())

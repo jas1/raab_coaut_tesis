@@ -641,7 +641,9 @@ server <- function(input, output,session) {
         
         callModule(estructura_modelos_server, "modelos",
                    static_network_grafo_reactive(), # parametros del componente: grafo # parametros del componente: base articulos
-                   modelado_df_vars_list # listado de variables para la seleccion en histogramas.
+                   modelado_df_vars_list
+                   #estructura_red_nodos_vars_compara_simu_list
+                   #modelado_df_vars_list # listado de variables para la seleccion en histogramas.
         )
     })
     

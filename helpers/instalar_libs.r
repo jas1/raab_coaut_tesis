@@ -2,7 +2,9 @@ if(!require(Rcpp)) {install.packages("Rcpp"); require(Rcpp);}
 if(!require(devtools)) {install.packages("devtools"); require(devtools);}
 if(!require(htmlwidgets)) {install.packages("htmlwidgets"); require(htmlwidgets);}
 if(!require(jsonlite)) {install.packages("jsonlite"); require(jsonlite);}
-# if(!require(jas1/RBioFabric)) {install.packages("jas1/RBioFabric"); require(jas1/RBioFabric);}
+if(!require("pacman")) {install.packages("pacman"); require("pacman");}
+#sudo apt-get install libmagick++-dev
+if(!require("jas1/RBioFabric")) { pacman::p_load_gh("jas1/RBioFabric"); require("jas1/RBioFabric");}
 if(!require(tidyr)) {install.packages("tidyr"); require(tidyr);}
 if(!require(dplyr)) {install.packages("dplyr"); require(dplyr);}
 if(!require(purrr)) {install.packages("purrr"); require(purrr);}
@@ -20,6 +22,7 @@ if(!require(visNetwork)) {install.packages("visNetwork"); require(visNetwork);}
 if(!require(shiny)) {install.packages("shiny"); require(shiny);}
 if(!require(DT)) {install.packages("DT"); require(DT);}
 if(!require(shinyWidgets)) {install.packages("shinyWidgets"); require(shinyWidgets);}
+if(!require(shinydashboardPlus)) {install.packages("shinydashboardPlus"); require(shinydashboardPlus);}
 if(!require(bsplus)) {install.packages("bsplus"); require(bsplus);}
 if(!require(plotly)) {install.packages("plotly"); require(plotly);}
 if(!require(shinydashboard)) {install.packages("shinydashboard"); require(shinydashboard);}
@@ -37,3 +40,6 @@ if(!require(survival)) {install.packages("survival"); require(survival);}
 if(!require(cluster)) {install.packages("cluster"); require(cluster);}
 if(!require(rpart)) {install.packages("rpart"); require(rpart);}
 if(!require(Hmisc)) {install.packages("Hmisc"); require(Hmisc);}
+if(!require(tm)) {install.packages("tm"); require(tm);}
+if(!require(tidytext)) {install.packages("tidytext"); require(tidytext);}
+
