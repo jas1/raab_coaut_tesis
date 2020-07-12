@@ -1,5 +1,5 @@
 # IMPORT LIBS ----------------------------------------------------------------------------
-library(here)#install.packages("here")
+library("here")#install.packages("here")
 source(here:::here("funcs","imports.r"),encoding = "UTF-8")
 source(here:::here("funcs","funciones.r"),encoding = "UTF-8")
 source(here:::here("funcs","globals.r"),encoding = "UTF-8")
@@ -91,11 +91,7 @@ cantidad_articulos_N_autores <- function(){
 
 # cap4: hipotesis componentes ---------------------------------------------
 
-library(here)
-library(dplyr)
-library(tidyr)
-library(purrr)
-pacman::p_load(char=c("fuzzyjoin","stringdist")) 
+pacman::p_load(char=c("here","dplyr","tidyr","purrr","fuzzyjoin","stringdist")) 
 
 path_compos <- here::here("tmp","20200328_cap_4_datos_componentes")
 files_autores <- list.files(path=path_compos,full.names = TRUE,pattern = "autores")
@@ -336,11 +332,17 @@ comparar_99_96 %>% filter(flag_nuevo) %>%
     mutate(autores_nuevos = purrr::map(data,.f = function(d){d %>% pull(autor) %>% paste0(sep=";")})) %>% 
     tidyr::unnest(autores_nuevos)
     
-nuevos_de_compos <- comparar_99_96 %>% filter(flag_nuevo) %>% count(compo_key.x) group_by(compo_key.x) %>% summarise(autores_nuevos=paste0(autor,sep=";"))
-    mutate(flag_absorbido=if_else(!flag_crecido_absorbido,NA,unlist(purrr::pmap(.l=list("aut_t1"=autores.x,
-                                                                                           "aut_t0"=autores.y,
-                                                                                           "nuevos"= (. %>% filter(flag_nuevo) %>% group_by(compo_key.x) %>% summarise(autores_nuevos=paste0(autor,collapse = ";"))),
-                                                                                   .f=fue_absorbido)))))
+# nuevos_de_compos <- comparar_99_96 %>% dplyr::filter(flag_nuevo) %>% dplyr::count(compo_key.x) %>%  
+#     dplyr::group_by(compo_key.x) %>% 
+#     dplyr::summarise(autores_nuevos=paste0(autor,sep=";"))
+# 
+# dplyr::mutate(flag_absorbido=if_else(!flag_crecido_absorbido,NA,unlist(purrr::pmap(.l=list("aut_t1"=autores.x,
+#                                                                                            "aut_t0"=autores.y,
+#                                                                                            "nuevos"= (. %>% 
+#                                                                                                           dplyr::filter(flag_nuevo) %>% 
+#                                                                                                           dplyr::group_by(compo_key.x) %>% 
+#                                                                                                           dplyr::summarise(autores_nuevos=paste0(autor,collapse = ";"))),
+#                                                                                    .f=fue_absorbido)))))
 
 
 

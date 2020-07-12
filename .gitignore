@@ -43,3 +43,4 @@ rsconnect/
 # temp folder: for tests , debugging outputs, etc
 tmp/
 
+packrat/lib*/

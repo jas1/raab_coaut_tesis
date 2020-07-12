@@ -62,7 +62,7 @@ libs_filtered <- all_libs %>%
 # RBioFabric = no , porque uso el de jas1
 # "" = no , porque no.
 libs_para_bajar <- libs_filtered[which(!(libs_filtered%in%c("","RBioFabric")))]
-evaluate_txt_template <-'if(!require(RPL)) {install.packages("RPL"); require(RPL);}'
+evaluate_txt_template <-'if(!require("RPL")) {install.packages("RPL"); require("RPL");}'
 evaluate_txt_template_2 <-'install.packages("RPL")'
 reqs <- purrr::map(libs_para_bajar,~gsub(pattern="RPL",
                                  x = evaluate_txt_template,

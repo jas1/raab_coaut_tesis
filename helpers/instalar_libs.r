@@ -1,7 +1,8 @@
-if(!require(Rcpp)) {install.packages("Rcpp"); require(Rcpp);}
-if(!require(devtools)) {install.packages("devtools"); require(devtools);}
-if(!require(htmlwidgets)) {install.packages("htmlwidgets"); require(htmlwidgets);}
-if(!require(jsonlite)) {install.packages("jsonlite"); require(jsonlite);}
+if(!require("here")) {install.packages("here"); require("here");}
+if(!require("Rcpp")) {install.packages("Rcpp"); require("Rcpp");}
+if(!require("devtools")) {install.packages("devtools"); require("devtools");}
+if(!require("htmlwidgets")) {install.packages("htmlwidgets"); require("htmlwidgets");}
+if(!require("jsonlite")) {install.packages("jsonlite"); require("jsonlite");}
 if(!require("pacman")) {install.packages("pacman"); require("pacman");}
 #sudo apt-get install libmagick++-dev
 if(!require("jas1/RBioFabric")) { pacman::p_load_gh("jas1/RBioFabric"); require("jas1/RBioFabric");}
@@ -42,4 +43,5 @@ if(!require(rpart)) {install.packages("rpart"); require(rpart);}
 if(!require(Hmisc)) {install.packages("Hmisc"); require(Hmisc);}
 if(!require(tm)) {install.packages("tm"); require(tm);}
 if(!require(tidytext)) {install.packages("tidytext"); require(tidytext);}
+if(!require("rebus")) {install.packages("rebus"); require("rebus");}
 
