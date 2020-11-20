@@ -1,3 +1,4 @@
+log_prefix <- "shiny_module_estructura_modelos.r"
 #shiny module estructura - simulacion / modelos
 
 estructura_modelos_ui <- function(id, # escencial para poder armar el componente
@@ -898,3 +899,4 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
          resultado
      }) 
 }
+flog.info(paste0(log_prefix,"  - LOADED"))

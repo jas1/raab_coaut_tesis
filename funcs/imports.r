@@ -3,8 +3,9 @@
 
 
 shiny_apps_import_flag <- TRUE
-
+log_prefix <- "imports.r"
 if (!shiny_apps_import_flag) {
+    flog.info(paste0(log_prefix,"  - NO SHINY APPS"))
     library(pacman)
     packages_instalar <-c("rlang","tidyr","dplyr","purrr","stringr","stringi","lubridate","RSQLite","DBI",
                           "ggplot2","RColorBrewer","shiny","DT","shinyWidgets","bsplus","plotly","shinydashboard","shinydashboardPlus",
@@ -13,6 +14,7 @@ if (!shiny_apps_import_flag) {
     pacman::p_load(char = packages_instalar)
     pacman::p_load_gh(char= "jas1/RBioFabric",dependencies = FALSE) #devtools::install_github("jas1/RBioFabric")
 }else{
+    flog.info(paste0(log_prefix,"  - SHINY APPS"))
     library(rlang)
     library(tidyr)#install.packages("tidyr")
     library(dplyr)#install.packages("dplyr")
@@ -72,3 +74,4 @@ if (!shiny_apps_import_flag) {
     library(assertive)#install.packages("assertive")
     library(testthat)#install.packages("testthat")
 }
+flog.info(paste0(log_prefix,"  - LOADED"))

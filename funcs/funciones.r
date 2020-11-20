@@ -1,4 +1,5 @@
 # functions : funciones necesarias para que corra la app.
+log_prefix <- "funciones.r"
 
 # FUNCIONES ----------------------------------------------------------------------------
 
@@ -1350,3 +1351,4 @@ show_bipart_vertex_id_diff <- function(grafo,data_acotado){
         filter(id != name) %>% select(id,name,label,fuerza_colaboracion)
     
 }
+flog.info(paste0(log_prefix,"  - LOADED"))

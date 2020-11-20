@@ -1,3 +1,4 @@
+log_prefix <- "shiny_module_articulos_text_mining.r"
 
 textmining_ui <- function(id, # escencial para poder armar el componente
                          label = "Análisis de articulos") {
@@ -242,3 +243,5 @@ textmining_server <- function(input, output, session, # parametros de shiny
     })
 
 }
+
+flog.info(paste0(log_prefix,"  - LOADED"))

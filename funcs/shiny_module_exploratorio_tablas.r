@@ -1,3 +1,4 @@
+log_prefix <- "shiny_module_exploratorio_tablas.r"
 # modulo: analisis exploratorio datos de las tablas: 
 # Autores
 # - data cruda ( data tables )
@@ -473,3 +474,4 @@ eda_aut_art_server <- function(input, output, session, stringsAsFactors,acotar_a
     
     
 }
+flog.info(paste0(log_prefix,"  - LOADED"))

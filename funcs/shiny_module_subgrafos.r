@@ -1,3 +1,4 @@
+log_prefix <- "shiny_module_subgrafos.r"
 # shiny module: explorar componentes / subgrafos: 
 # similar a lo de comunidades: 
 # current grafo + current db articulos 
@@ -306,3 +307,4 @@ subgrafos_server <- function(input, output, session, # parametros de shiny
     
     
 }
+flog.info(paste0(log_prefix,"  - LOADED"))

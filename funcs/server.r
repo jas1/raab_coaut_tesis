@@ -1,5 +1,5 @@
 # server.r moviendo todo el backend shiny a server.
-
+log_prefix <- "server.r"
 
 server <- function(input, output,session) {
     # generico menu messages -----------------------------------------------------------
@@ -1451,3 +1451,4 @@ server <- function(input, output,session) {
     })
 
 }
+flog.info(paste0(log_prefix,"  - LOADED"))

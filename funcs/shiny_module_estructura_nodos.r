@@ -1,3 +1,4 @@
+log_prefix <- "shiny_module_estructura_nodos.r"
 # shiny_module_estructura_nodos
 # bajar datos
 # listado en crudo
@@ -276,3 +277,4 @@ estructura_nodos_server <- function(input, output, session, # parametros de shin
         # ggplotly(pl)
     })
 }
+flog.info(paste0(log_prefix,"  - LOADED"))

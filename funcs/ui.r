@@ -1,5 +1,5 @@
 # ui.r > moviendo toda la UI de shiny a UI.r
-
+log_prefix <- "ui.r"
 # SHINY: HEADER -----------------------------------------------------------------------------------------------
 # header <- dashboardHeader(
 #     title="Análisis de coautoría de Revista Argentina de Antropología Biológica 1996 a 2016",
@@ -656,3 +656,4 @@ tabPanel("Comunidades",
 
 # ui <- dashboardPage(header, sidebar, body)
 ui <- dashboardPagePlus(header = header,sidebar = sidebar,body = body, rightsidebar = rightsidebar)
+flog.info(paste0(log_prefix,"  - LOADED"))
