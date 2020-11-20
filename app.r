@@ -7,7 +7,7 @@ library("futile.logger")
 log_file_name <- here::here("logs",format(x=Sys.time(),format="%Y%m%d_%H%M%S_%Z_-_log.log"))
 logger_name <- 'raab_coaut_tesis'
 flog.appender(appender.file(log_file_name), name=logger_name)
-flog.threshold(TRACE,name=logger_name)
+flog.threshold(ERROR,name=logger_name)
 flog.info("LOGGER INICIADO")
 #install.packages("futile.logger")
 source(here:::here("funcs","imports.r"),encoding = "UTF-8")

@@ -107,7 +107,7 @@ textmining_server <- function(input, output, session, # parametros de shiny
     })
     
     articulos_analizados_reactive <- reactive({
-        flog.info(paste0(log_prefix,"  - articulos_analizados_reactive - "),current_articulos, capture = TRUE)   
+        flog.debug(paste0(log_prefix,"  - articulos_analizados_reactive - "),current_articulos, capture = TRUE)   
         current_articulos 
     })
 

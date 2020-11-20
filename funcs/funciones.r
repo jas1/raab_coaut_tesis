@@ -818,6 +818,47 @@ generar_grafos_similares <- function(grafo_reactive_tmp,cantidad=1000) {
 
 # FUNCIONES: ESTRUCTURA GRAFO: SIMULACIONES  ------------------------------
 
+smallworld_data_calculo <- function(valores_para_red,params,simulaciones_resumen_random,grafo_actual){
+    flog.debug(paste0(log_prefix,"  - smallworld_data_calculo - parametros 1: valores_para_red:"),valores_para_red,capture=TRUE)
+    flog.debug(paste0(log_prefix,"  - smallworld_data_calculo - parametros 1: params:"),params,capture=TRUE)
+
+    flog.debug(paste0(log_prefix,"  - smallworld_data_calculo - parametros 1: grafo_actual: "),grafo_actual,capture=TRUE)
+    flog.debug(paste0(log_prefix,"  - smallworld_data_calculo - parametros 1: simulaciones_resumen_random: "),simulaciones_resumen_random,capture=TRUE)
+
+    param_B_smallworldness <- params %>% pull(param_iter)
+    param_long <- params %>% 
+        tidyr::gather(parametro,valor) %>% 
+        as_tibble() 
+
+    # texto_params <-param_long %>% mutate(texto = paste("<p><strong>",str_replace(parametro,"param_",""),"</strong>",valor,"</p>")) %>% pull(texto) %>% paste(collapse = "\n")
+    
+    delta_net <- valores_para_red$avg_path / simulaciones_resumen_random$mean_avg_path_length
+    gamma_net <- valores_para_red$transitivity / simulaciones_resumen_random$mean_transitivity
+    
+    es_small_world <- round(delta_net) == 1  &  gamma_net > 1 
+    
+    paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
+    
+    # validacion 2. solo control interaciones y  lo & hi confidencia. que le dejamos lo default
+    # para generar los 1000 el de smallworldness utiliza: degree.sequence.game
+    # https://www.rdocumentation.org/packages/igraph/versions/0.4.1/topics/degree.sequence.game
+    smallworldness_grafo <- qgraph::smallworldness(x=grafo_actual,B = param_B_smallworldness )
+    es_mayor_a_1 <- smallworldness_grafo["smallworldness"] > 1
+    es_mayor_a_3 <- smallworldness_grafo["smallworldness"] > 3
+    parametros_sw <- paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
+    
+    ret_list <- list('parametros_sw'=parametros_sw,
+                     'delta_net'=delta_net,
+                     'gamma_net'=gamma_net,
+                     'es_small_world'=es_small_world,
+                     'smallworldness_grafo'=smallworldness_grafo,
+                     'es_mayor_a_1'=es_mayor_a_1,
+                     'es_mayor_a_3'=es_mayor_a_3,
+                     'valores_para_red'=valores_para_red,
+                     'simulaciones_resumen_random'=simulaciones_resumen_random) 
+    ret_list
+}
+
 # entra listado simulaciones + parametros
 # lo extraigo a funcion porque lo voy a tener que hacer en los 3 modelos
 # si eventualmente hay otros modelos se toca en 1 solo lugar
@@ -1292,7 +1333,7 @@ armar_render_ndtvd3_animacion <- function(current_test_tnet,
 
 acotar_articulos_por_autores_modulo_subgrafos <- function(db_articulos,autores_comunidad){
     
-    flog.info(paste0(log_prefix," acotar_articulos_por_autores_modulo_subgrafos - INI"))
+    flog.debug(paste0(log_prefix," acotar_articulos_por_autores_modulo_subgrafos - INI"))
     
     ret <- db_articulos %>% 
         filter(autor %in% autores_comunidad) %>%
@@ -1329,10 +1370,11 @@ palabras_analizadas <- function(articulos, stopwords_en, stopwords_es){
         select(autores,url,titulos) %>% 
         unnest_tokens(palabra, titulos,drop = FALSE) 
     
+    # https://stackoverflow.com/questions/28702960/find-complement-of-a-data-frame-anti-join
     # cambio de los anti join por un equivalente en data tables.
-    anti_1 <- setDT(tmp_tokens)[!setDT(en_stopwords), on = "palabra"]
+    anti_1 <- setDT(tmp_tokens)[!setDT(stopwords_en), on = "palabra"]
     
-    anti_2 <- setDT(anti_1)[!setDT(es_stopwords), on = "palabra"]
+    anti_2 <- setDT(anti_1)[!setDT(stopwords_es), on = "palabra"]
     
     ret <- anti_2 %>% as_tibble()
 

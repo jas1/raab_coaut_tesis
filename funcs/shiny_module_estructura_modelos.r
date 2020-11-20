@@ -672,38 +672,45 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
          valores_para_red <- valores_para_red_reactive()
          params <-  modelo_random_params_reactive()
          simulaciones_resumen_random <- modelo_random_resumen_reactive()
+         grafo_actual <- current_grafo
          
-         param_long <- params %>% 
-             tidyr::gather(parametro,valor) %>% 
-             as_tibble() 
-         # texto_params <-param_long %>% mutate(texto = paste("<p><strong>",str_replace(parametro,"param_",""),"</strong>",valor,"</p>")) %>% pull(texto) %>% paste(collapse = "\n")
+         # param_B_smallworldness <- params %>% pull(param_iter)
+         # param_long <- params %>% 
+         #     tidyr::gather(parametro,valor) %>% 
+         #     as_tibble() 
+         # 
+         # 
+         # 
+         # # texto_params <-param_long %>% mutate(texto = paste("<p><strong>",str_replace(parametro,"param_",""),"</strong>",valor,"</p>")) %>% pull(texto) %>% paste(collapse = "\n")
+         # 
+         # delta_net <- valores_para_red$avg_path / simulaciones_resumen_random$mean_avg_path_length
+         # gamma_net <- valores_para_red$transitivity / simulaciones_resumen_random$mean_transitivity
+         # 
+         # es_small_world <- round(delta_net) == 1  &  gamma_net > 1 
+         # 
+         # paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
+         # 
+         # # validacion 2. solo control interaciones y  lo & hi confidencia. que le dejamos lo default
+         # # para generar los 1000 el de smallworldness utiliza: degree.sequence.game
+         # # https://www.rdocumentation.org/packages/igraph/versions/0.4.1/topics/degree.sequence.game
+         # smallworldness_grafo <- qgraph::smallworldness(x=grafo_actual,B = param_B_smallworldness )
+         # es_mayor_a_1 <- smallworldness_grafo > 1
+         # es_mayor_a_3 <- smallworldness_grafo > 3
+         # parametros_sw <- paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
+         # 
+         # ret_list <- list('parametros_sw'=parametros_sw,
+         #                  'delta_net'=delta_net,
+         #                  'gamma_net'=gamma_net,
+         #                  'es_small_world'=es_small_world,
+         #                  'smallworldness_grafo'=smallworldness_grafo,
+         #                  'es_mayor_a_1'=es_mayor_a_1,
+         #                  'es_mayor_a_3'=es_mayor_a_3,
+         #                  'valores_para_red'=valores_para_red,
+         #                  'simulaciones_resumen_random'=simulaciones_resumen_random)
+         ret_list <- smallworld_data_calculo(valores_para_red,params,simulaciones_resumen_random,grafo_actual)
          
-         delta_net <- valores_para_red$avg_path / simulaciones_resumen_random$mean_avg_path_length
-         gamma_net <- valores_para_red$transitivity / simulaciones_resumen_random$mean_transitivity
-         
-         es_small_world <- round(delta_net) == 1  &  gamma_net > 1 
-         
-         paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
-         
-         # validacion 2. solo control interaciones y  lo & hi confidencia. que le dejamos lo default
-         # para generar los 1000 el de smallworldness utiliza: degree.sequence.game
-         # https://www.rdocumentation.org/packages/igraph/versions/0.4.1/topics/degree.sequence.game
-         smallworldness_grafo <- qgraph::smallworldness(x=current_grafo,B = params %>% pull(param_iter) )
-         es_mayor_a_1 <- smallworldness_grafo > 1
-         es_mayor_a_3 <- smallworldness_grafo > 3
-         parametros_sw <- paste0(param_long$parametro,": ",param_long$valor,collapse = "\n")
-         
-         ret_list <- list('parametros_sw'=parametros_sw,
-                          'delta_net'=delta_net,
-                          'gamma_net'=gamma_net,
-                          'es_small_world'=es_small_world,
-                          'smallworldness_grafo'=smallworldness_grafo,
-                          'es_mayor_a_1'=es_mayor_a_1,
-                          'es_mayor_a_3'=es_mayor_a_3,
-                          'valores_para_red'=valores_para_red,
-                          'simulaciones_resumen_random'=simulaciones_resumen_random)
+         flog.debug(paste0(log_prefix,"  - smallworld data - : "),ret_list,capture = TRUE)
          ret_list
-         
      })
      
 # SERVER - SMALL WORLD - Parametros ------------------------------------------
@@ -874,7 +881,7 @@ estructura_modelos_server <- function(input, output, session, # parametros de sh
          resultado <- div(
              br(),
              p(" Una red Libre escala es una red en la cual su distribución de grado sigue la ley de potencia."),
-             p(a(" Barabasi (2015) ",href="http://networksciencebook.com/chapter/4")),# Agregar el link al capitulo 4 del libro de network science.
+             p(a(" Barabasi (2016) ",href="http://networksciencebook.com/chapter/4")),# Agregar el link al capitulo 4 del libro de network science.
              p(strong(" Verificamos por la ley de potencia:")),
              p(" Luego de ajustar los grados de la red a la ley de potencia, tenemos que verificar:"),
              # ley de potencia ( power fit law)
