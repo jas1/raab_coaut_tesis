@@ -21,63 +21,74 @@
 
 #usethis::use_test()
 
-testthat::test_that("datos tabla reactive",{
-    
-    semilla <- 12345
-    
-    # cota temporal segun tesis
-    cota_anio <-  c(1996:2016)
-    
-    # cota seccion segun tesis
-    cota_seccion <- c("Trabajos Originales")
-    
-    # db recreada
-    db_limpia <- paste0("db_raab_grafos.sqlite")
-    
-    # articulos todo
-    art_full <- articulos_todos_grafo(db_limpia,anios = cota_anio,secciones = cota_seccion)
-    
-    # grafo todo
-    gb_ok <- armado_grafo_bipartito(art_full)
-    
-    # algoritmo seleccionado
-    algoritmo_seleccionado <- 'cluster_edge_betweenness'
-    
-    comunidad_sel_detalles <- arma_comunidad(
-        semilla,
-        gb_ok,
-        algoritmo_seleccionado)
-    
-    
-    autores_db <- art_full
-    current_comunidades <- comunidad_sel_detalles
-    resultado <- listado_comunidades_autores (current_comunidades,autores_db)
-    
-    head(resultado)
-    
-    nodo_comunidad <- armar_df_membership(current_comunidades)
-    tmp_autores <- lista_vertices_autores(autores_db)
-    
-    # glimpse(nodo_comunidad)
-    # 
-    # glimpse(tmp_autores)
-    
-    nodo_comunidad_2 <- nodo_comunidad %>% 
-        left_join(autores_db,by=c("nombre"="aut_id")) %>%
-        select(nombre,member,autor) %>% 
-        group_by(nombre,member,autor) %>% 
-        tally() %>% 
-        select(-n)
-    
-    listado_comunidades <- nodo_comunidad_2 %>% 
-        arrange(member) %>% 
-        group_by(member) %>% 
-        summarize(n=n(),autores=paste(collapse='; ',autor)) %>% 
-        arrange(desc(n)) %>% 
-        rename(comunidad=member,cant_autores=n)
-    listado_comunidades
-    
-    
-    stopifnot(resultado$cant_autores == listado_comunidades$cant_autores)
-    
-})
+# https://mastering-shiny.org/scaling-testing.html?#testing-reactivity
+# test_that("reactives and output updates", {
+#     testServer(server, {
+#         session$setInputs(x = 1, y = 1, z = 1)
+#         expect_equal(xy(), 0)
+#         expect_equal(yz(), 2)
+#         expect_equal(output$out, "Result: 0")
+#     })
+# })
+
+
+# testthat::test_that("datos tabla reactive",{
+#     
+#     semilla <- 12345
+#     
+#     # cota temporal segun tesis
+#     cota_anio <-  c(1996:2016)
+#     
+#     # cota seccion segun tesis
+#     cota_seccion <- c("Trabajos Originales")
+#     
+#     # db recreada
+#     db_limpia <- paste0("db_raab_grafos.sqlite")
+#     
+#     # articulos todo
+#     art_full <- articulos_todos_grafo(db_limpia,anios = cota_anio,secciones = cota_seccion)
+#     
+#     # grafo todo
+#     gb_ok <- armado_grafo_bipartito(art_full)
+#     
+#     # algoritmo seleccionado
+#     algoritmo_seleccionado <- 'cluster_edge_betweenness'
+#     
+#     comunidad_sel_detalles <- arma_comunidad(
+#         semilla,
+#         gb_ok,
+#         algoritmo_seleccionado)
+#     
+#     
+#     autores_db <- art_full
+#     current_comunidades <- comunidad_sel_detalles
+#     resultado <- listado_comunidades_autores (current_comunidades,autores_db)
+#     
+#     head(resultado)
+#     
+#     nodo_comunidad <- armar_df_membership(current_comunidades)
+#     tmp_autores <- lista_vertices_autores(autores_db)
+#     
+#     # glimpse(nodo_comunidad)
+#     # 
+#     # glimpse(tmp_autores)
+#     
+#     nodo_comunidad_2 <- nodo_comunidad %>% 
+#         left_join(autores_db,by=c("nombre"="aut_id")) %>%
+#         select(nombre,member,autor) %>% 
+#         group_by(nombre,member,autor) %>% 
+#         tally() %>% 
+#         select(-n)
+#     
+#     listado_comunidades <- nodo_comunidad_2 %>% 
+#         arrange(member) %>% 
+#         group_by(member) %>% 
+#         summarize(n=n(),autores=paste(collapse='; ',autor)) %>% 
+#         arrange(desc(n)) %>% 
+#         rename(comunidad=member,cant_autores=n)
+#     listado_comunidades
+#     
+#     
+#     stopifnot(resultado$cant_autores == listado_comunidades$cant_autores)
+#     
+# })
