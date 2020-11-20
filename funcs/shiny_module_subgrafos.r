@@ -189,31 +189,14 @@ subgrafos_server <- function(input, output, session, # parametros de shiny
     articulos_reactive <- reactive({
 
         current_com_selected <- autores_subgrafos_reactive()[input$dt_autores_subgrafos_rows_selected,]
-        autores_comunidad <- str_split(current_com_selected[3],pattern = ';') %>% unlist()
-
-        # print(autores_comunidad)
-        # print(current_db_articulos)
-        # write.csv(current_db_articulos, "articulos_ahora",row.names = FALSE,fileEncoding = "UTF-8")
-        filtro_coautores <- current_db_articulos %>% 
-            filter(autor %in% autores_comunidad) %>%
-            select(autores,anio,titulo,url,cant_autores,fuerza_colaboracion) %>%
-            mutate(articulo=paste0("<p><a target='_blank' href='",url,"'>",titulo,"</a></p>")) %>% 
-            group_by(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% tally() %>% 
-            select(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% 
-            mutate(parsed_data=purrr::map(articulo,.f = xml2::read_html)) %>% 
-            mutate(df_parsed=purrr::map(parsed_data,.f = function(x){
-                url <- x %>% 
-                    rvest::html_nodes(xpath = '//a') %>% 
-                    rvest::html_attr("href")
-                titulos <- x %>% 
-                    rvest::html_nodes(xpath = '//a') %>% 
-                    rvest::html_text()
-                data.frame(url,titulos,stringsAsFactors = FALSE)
-                
-            })) %>% 
-            unnest(df_parsed) %>% 
-            select(-parsed_data)
         
+        flog.debug(paste0(log_prefix," articulos_reactive - "),current_com_selected,capture = TRUE)
+        flog.debug(paste0(log_prefix," articulos_reactive - autores"),current_com_selected[3],capture = TRUE)
+        
+        autores_comunidad <- str_split(current_com_selected[3],pattern = ';') %>% unlist()
+        flog.debug(paste0(log_prefix," articulos_reactive - autores_comunidad splited:"),autores_comunidad,capture = TRUE)
+        filtro_coautores <- acotar_articulos_por_autores_modulo_subgrafos(current_db_articulos,autores_comunidad) 
+
         filtro_coautores
     })
     

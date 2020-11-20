@@ -107,6 +107,7 @@ textmining_server <- function(input, output, session, # parametros de shiny
     })
     
     articulos_analizados_reactive <- reactive({
+        flog.info(paste0(log_prefix,"  - articulos_analizados_reactive - "),current_articulos, capture = TRUE)   
         current_articulos 
     })
 
@@ -166,11 +167,15 @@ textmining_server <- function(input, output, session, # parametros de shiny
 
 # texto - palabras_analizadas_reactive --------------------------------------------------
     palabras_analizadas_reactive <- reactive({
-        unnested_titulos <- articulos_analizados_reactive()  %>%
-            select(autores,url,titulos) %>% 
-            unnest_tokens(palabra, titulos,drop = FALSE) %>% 
-            anti_join(palabras_stopwords_en_reactive()) %>% # porque hay en ingles
-            anti_join(palabras_stopwords_es_reactive())
+        
+        unnested_titulos <- palabras_analizadas(articulos = articulos_analizados_reactive(),
+                                                stopwords_en = palabras_stopwords_en_reactive(),
+                                                stopwords_es = palabras_stopwords_es_reactive())
+        # articulos_analizados_reactive()  %>%
+        #     select(autores,url,titulos) %>% 
+        #     unnest_tokens(palabra, titulos,drop = FALSE) %>% 
+        #     anti_join(palabras_stopwords_en_reactive()) %>% # porque hay en ingles
+        #     anti_join(palabras_stopwords_es_reactive())
         
         unnested_titulos
     })

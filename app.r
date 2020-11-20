@@ -52,6 +52,6 @@ source(here:::here("funcs","ui.r"),encoding = "UTF-8")
 source(here:::here("funcs","server.r"),encoding = "UTF-8")
 
 # SHINY: app invocation -------------------------------------------------------
-
-options(shiny.reactlog=TRUE) 
+#options(shiny.fullstacktrace = TRUE)
+#options(shiny.reactlog=TRUE) 
 shinyApp(ui = ui, server = server)

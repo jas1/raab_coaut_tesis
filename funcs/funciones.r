@@ -1288,6 +1288,56 @@ armar_render_ndtvd3_animacion <- function(current_test_tnet,
     ret_render
 }
 
+# FUNCIONES: modulo estuctura nodos ---------------------------------------------------
+
+acotar_articulos_por_autores_modulo_subgrafos <- function(db_articulos,autores_comunidad){
+    
+    flog.info(paste0(log_prefix," acotar_articulos_por_autores_modulo_subgrafos - INI"))
+    
+    ret <- db_articulos %>% 
+        filter(autor %in% autores_comunidad) %>%
+        select(autores,anio,titulo,url,cant_autores,fuerza_colaboracion) %>%
+        mutate(articulo=paste0("<p><a target='_blank' href='",url,"'>",titulo,"</a></p>")) %>% 
+        group_by(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% tally() %>% 
+        select(autores,anio,articulo,cant_autores,fuerza_colaboracion) %>% 
+        mutate(parsed_data=purrr::map(articulo,.f = xml2::read_html)) %>% 
+        mutate(df_parsed=purrr::map(parsed_data,.f = function(x){
+            url <- x %>% 
+                rvest::html_nodes(xpath = '//a') %>% 
+                rvest::html_attr("href")
+            titulos <- x %>% 
+                rvest::html_nodes(xpath = '//a') %>% 
+                rvest::html_text()
+            data.frame(url,titulos,stringsAsFactors = FALSE)
+            
+        })) %>% 
+        unnest(df_parsed) %>% 
+        select(-parsed_data)
+    ret
+}
+
+
+palabras_analizadas <- function(articulos, stopwords_en, stopwords_es){
+    # OLD codigo, traia problemas en el antijoin y reventaba.
+    # ret <- articulos  %>%
+    #     select(autores,url,titulos) %>% 
+    #     unnest_tokens(palabra, titulos,drop = FALSE) %>% 
+    #     anti_join(stopwords_en) %>% # porque hay en ingles
+    #     anti_join(stopwords_es)
+    
+    tmp_tokens <- articulos  %>%
+        select(autores,url,titulos) %>% 
+        unnest_tokens(palabra, titulos,drop = FALSE) 
+    
+    # cambio de los anti join por un equivalente en data tables.
+    anti_1 <- setDT(tmp_tokens)[!setDT(en_stopwords), on = "palabra"]
+    
+    anti_2 <- setDT(anti_1)[!setDT(es_stopwords), on = "palabra"]
+    
+    ret <- anti_2 %>% as_tibble()
+
+    ret
+}
 
 # FUNCIONES: debugging ---------------------------------------------------------------
 

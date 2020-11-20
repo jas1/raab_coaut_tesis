@@ -7,6 +7,56 @@
 # 46: palabras_analizadas_count_reactive
 # 44: <observer> [/home/julio/Documents/git/raab-coaut-t/funcs/shiny_module_articulos_text_mining.r#86]
 
+
+
+test_that("funciones.r: palabras_analizadas", {
+    library("here")#install.packages("here")
+    library("futile.logger")
+    library("data.table")
+
+    
+    
+    log_file_name <- here::here("logs",format(x=Sys.time(),format="%Y%m%d_%H%M%S_%Z_-_log.log"))
+    logger_name <- 'raab_coaut_tesis'
+    flog.appender(appender.file(log_file_name), name=logger_name)
+    flog.threshold(TRACE,name=logger_name)
+    flog.info("LOGGER INICIADO")
+    #install.packages("futile.logger")
+    source(here:::here("funcs","imports.r"),encoding = "UTF-8")
+    source(here:::here("funcs","funciones.r"),encoding = "UTF-8") # asi toma la ultima version
+    
+    input_static_periodos <- c(1999)
+    
+    cota_seccion <- c("Trabajos Originales")
+    # db recreada
+    db_limpia <- "db_raab_grafos.sqlite"
+    # resultado vacio # warning, sigue adelante.
+    #art_empty <- articulos_todos_grafo(db_limpia,anios = input_static_periodos,secciones = cota_seccion)
+    
+    articulos <- articulos_todos_grafo(db_limpia,input_static_periodos,cota_seccion)    
+    
+    autores_elegidos_str <- "Alberto Fiorito;Emma L. Alfaro;Ignacio F. Bejarano;José Edgardo Dipierri;Natalia García;Osvaldo Kinderman;Teresa García"
+    
+    autores_elegidos_comunidad <- stringr::str_split(autores_elegidos_str,pattern = ";") %>%  unlist()
+    
+    articulos_acotados <- acotar_articulos_por_autores_modulo_subgrafos(db_articulos = articulos ,
+                                                                        autores_comunidad = autores_elegidos_comunidad)
+    
+    en_stopwords <- tidytext::stop_words %>% rename(palabra=word)
+    es_stopwords <- data.frame(stringsAsFactors = FALSE,palabra=tm::stopwords("spanish"))
+
+    # existia un problema en palabras analizadas, se cambio la implementacion de anti join por data tables
+    resultado_palabras <- palabras_analizadas(articulos = articulos_acotados,
+                        stopwords_en = en_stopwords,
+                        stopwords_es = es_stopwords)
+    resultado_palabras
+
+    testthat::expect_true( tibble::is_tibble(resultado_palabras)  )
+    testthat::expect_true( nrow(resultado_palabras) > 0  )
+    testthat::expect_true( unique(resultado_palabras$anio) == input_static_periodos  )
+
+})
+
 # forma correcta par air viendo: 
 # https://mastering-shiny.org/scaling-testing.html#testing-functions
 # https://mastering-shiny.org/scaling-modules.html
