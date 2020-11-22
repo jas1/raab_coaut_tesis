@@ -1,29 +1,30 @@
-# Aplicación para analisis de redes de autoria en la RAAB 1996-2016 - tesis de maestria
+# Diseño de una herramienta para minería de redes de coautoría. Estudio del caso de la Revista Argentina de Antropología Biológica
 
-## detalle inicial
+Esta aplicación es parte de la tesis de maestría en http://datamining.dc.uba.ar/datamining/
 
-esta aplicacion utiliza los datos generados extraidos de la pagina de la raab
+## Detalle inicial
 
-esta representada en el documento por ahora en: 
+Esta aplicación utiliza los datos generados extraidos de la pagina de la Revista argentina de Antropologia Biologica
 
-https://docs.google.com/document/d/1beXv3P0fwFjpYsXHI5_mewccuVDtlohrX-1shSyWNaA/edit#
+https://revistas.unlp.edu.ar/raab/index
 
-eventualmente un bookdown o un pdf :p o link en la facu. 
+por el momento el borrador actual esta en:
 
-queda hacer bastantes cosas, pero por ahora se agrego reproducibilidad con 
-renv's https://rstudio.github.io/renv/articles/renv.html
+documentacion/spairani_tesis_2020_borrador_3.pdf
 
-## usar renv para que te " cargue " el contexto de paquetes: 
+eventualmente un pdf link en la biblioteca de la facu y tal vez un un bookdown.
+
+## usar renv para que te "cargue" el contexto de paquetes: 
 
 renv::restore()
 
-# Uso de la aplicación 
+## Uso de la aplicación 
 
-## se encuentra documentado en la siguiente playlist: 
+### se encuentra documentado en la siguiente playlist: 
 
 https://www.youtube.com/playlist?list=PLzX2cffR_LDHS-yUBnTrIFGbuM0ChgsOa
 
-## Herramienta para ánalisis de coautoría - Sección 1: consideraciones y EDA
+### Herramienta para ánalisis de coautoría - Sección 1: consideraciones y EDA
 
 Este video es parte de la playlist 
 "Herramienta para análisis de coautoría" 
@@ -35,7 +36,7 @@ proximamente más detalles.
 
 https://youtu.be/xRF1wW1hM30
 
-## Herramienta para ánalisis de coautoría - Sección 2: análisis estático
+### Herramienta para ánalisis de coautoría - Sección 2: análisis estático
 
 Este video es parte de la playlist 
 "Herramienta para análisis de coautoría" 
@@ -47,7 +48,7 @@ proximamente más detalles.
 
 https://youtu.be/UJuv5go1PyY
 
-## Herramienta para ánalisis de coautoría - Sección 3: análisis temporal
+### Herramienta para ánalisis de coautoría - Sección 3: análisis temporal
 
 Este video es parte de la playlist 
 "Herramienta para análisis de coautoría" 
@@ -58,3 +59,8 @@ Revisamos la sección "análisis temporal", donde se muestra la evolución de la
 proximamente más detalles.
 
 https://youtu.be/98oD9u21li0
+
+## observacion final
+
+Como todo código, es mejorable algunas son cuestiones técnicas otras son cuestiones de gusto y/o mejoras a la herramienta.
+varios de los siguientes pasos estan descriptos en el final de tesis.
