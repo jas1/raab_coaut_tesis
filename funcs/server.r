@@ -406,7 +406,10 @@ server <- function(input, output,session) {
     
     output$output_info_seleccion_vertex_degree <- renderUI({
 
-        span (info_seleccion_vertex_degree_reactive(),id="grado_0") # me esta devolviendo id 0 :S
+        # lo del collapse agregado por si info seleccion vertex viene mas de 1.
+        # puede pasar al analizar las aristas
+        valor_mostrar <-  paste0(info_seleccion_vertex_degree_reactive(),collapse = ";")
+        span (valor_mostrar,id="grado_0") # me esta devolviendo id 0 :S
     })
     
     
