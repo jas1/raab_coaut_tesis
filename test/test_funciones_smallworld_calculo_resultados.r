@@ -9,7 +9,7 @@
 
 
 
-test_that("funciones.r: palabras_analizadas", {
+testthat::test_that("funciones.r: palabras_analizadas", {
     library("here")#install.packages("here")
     library("futile.logger")
     library("data.table")
@@ -61,7 +61,7 @@ test_that("funciones.r: palabras_analizadas", {
 #usethis::use_test()
 
 # https://mastering-shiny.org/scaling-testing.html?#testing-reactivity
-# test_that("reactives and output updates", {
+# testthat::test_that("reactives and output updates", {
 #     testServer(server, {
 #         session$setInputs(x = 1, y = 1, z = 1)
 #         expect_equal(xy(), 0)

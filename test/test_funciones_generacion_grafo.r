@@ -82,7 +82,7 @@ VLART <- art_full %>%
     tally() %>% select(-n) %>% arrange(autores,articulo_id)
 
 
-test_that(
+testthat::test_that(
     "grafo: orden de aristas OK",
     {
         source(here:::here("funcs","funciones.r"),encoding = "UTF-8") # asi toma la ultima version
@@ -125,7 +125,7 @@ test_that(
 )
 
 
-test_that(
+testthat::test_that(
     "grafo: generacion aristas en coautorias ok ",
     {
         source(here:::here("funcs","funciones.r"),encoding = "UTF-8") # asi toma la ultima version
@@ -245,7 +245,7 @@ testthat::test_that(
 })
 
 
-test_that(
+testthat::test_that(
     "grafo: orden de vertices OK",
     {
 
@@ -282,7 +282,7 @@ test_that(
 # # esto me resolvio el problema de autores
 # art_full %>% filter(str_detect(aut_id,"a002")) %>% arrange(aut_id)
 # ahora tengo el problema de edges xD ! 
-test_that(
+testthat::test_that(
     "click nodo: que devuelva el vertice",
     {
         source(here:::here("funcs","funciones.r"),encoding = "UTF-8") # asi toma la ultima version
@@ -313,7 +313,7 @@ test_that(
     }
 )
 
-test_that(
+testthat::test_that(
     "art.asoc: subgrafo para autor",
     {
         source(here:::here("funcs","funciones.r"),encoding = "UTF-8") # asi toma la ultima version
@@ -345,7 +345,7 @@ test_that(
 )
 
 
-test_that::test_that(
+testthat::test_that(
     "grafo: bipartito show",
     {
         library(here)

@@ -5,7 +5,7 @@
 # segun seleccion: periodos
 
 
-test_that("grafo: orden de aristas OK",{
+testthat::test_that("grafo: orden de aristas OK",{
 
     source(here:::here("funcs","funciones.r"),encoding = "UTF-8") # asi toma la ultima version
     

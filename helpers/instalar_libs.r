@@ -5,7 +5,7 @@ if(!require("htmlwidgets")) {install.packages("htmlwidgets"); require("htmlwidge
 if(!require("jsonlite")) {install.packages("jsonlite"); require("jsonlite");}
 if(!require("pacman")) {install.packages("pacman"); require("pacman");}
 #sudo apt-get install libmagick++-dev
-if(!require("jas1/RBioFabric")) { pacman::p_load_gh("jas1/RBioFabric"); require("jas1/RBioFabric");}
+if(!require("RBioFabric")) { pacman::p_load_gh("jas1/RBioFabric"); require("RBioFabric");}
 if(!require("tidyr")) {install.packages("tidyr"); require("tidyr");}
 if(!require("dplyr")) {install.packages("dplyr"); require("dplyr");}
 if(!require("purrr")) {install.packages("purrr"); require("purrr");}
