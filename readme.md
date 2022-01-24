@@ -64,3 +64,9 @@ https://youtu.be/98oD9u21li0
 
 Como todo código, es mejorable algunas son cuestiones técnicas otras son cuestiones de gusto y/o mejoras a la herramienta.
 varios de los siguientes pasos estan descriptos en el final de tesis.
+
+## Video de la defensa
+
+- exposición: https://youtu.be/ut4xenV6vRE?t=887s
+- preguntas jurados: https://youtu.be/ut4xenV6vRE?t=3269
+- resultado: https://youtu.be/ut4xenV6vRE?t=6247
