@@ -70,3 +70,9 @@ varios de los siguientes pasos estan descriptos en el final de tesis.
 - exposición: https://youtu.be/ut4xenV6vRE?t=887s
 - preguntas jurados: https://youtu.be/ut4xenV6vRE?t=3269
 - resultado: https://youtu.be/ut4xenV6vRE?t=6247
+
+# changelog
+
+## 20240426: entra en revision de mejoras pendientes
+
+
